@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M3U播放器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 引入HLS.js库支持M3U8播放 -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.14/dist/hls.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36D399',
+            warning: '#FF9F43',
+            danger: '#FF5252',
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .playlist-shadow {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      .playlist-item-hover {
+        transition: all 0.2s ease;
+      }
+      .playlist-item-hover:hover {
+        transform: translateX(4px);
+      }
+      .btn-bounce {
+        transition: transform 0.2s;
+      }
+      .btn-bounce:active {
+        transform: scale(0.95);
+      }
+      .scrollbar-slim::-webkit-scrollbar {
+        width: 6px;
+      }
+      .scrollbar-slim::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .scrollbar-slim::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+      }
+      .scrollbar-slim::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
+      .player-fixed {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 40;
+        transform: translateY(0);
+        transition: transform 0.3s ease;
+      }
+      .player-hidden {
+        transform: translateY(100%);
+      }
+      .player-transition {
+        transition: all 0.3s ease;
+      }
+      .text-break-all {
+        word-break: break-all;
+      }
+    }
+	p {
+		display:none;
+	}
+  </style>
+</head>
+<body class="bg-gray-50 font-inter text-dark min-h-screen flex flex-col pb-24">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-sm sticky top-0 z-10">
+    <div id="topNav" class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-list-alt text-primary text-2xl"></i>
+        <h1 class="text-xl font-bold text-dark">M3U播放器</h1>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button id="helpBtn" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+          <i class="fa fa-question-circle text-dark"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要内容区 -->
+  <main class="flex-grow container mx-auto px-4 py-6">
+      <!-- 文件操作区 -->
+    <section class="mb-8 bg-white rounded-xl p-6 playlist-shadow">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex-1">
+          <label for="fileInput" class="block text-sm font-medium text-gray-700 mb-1">选择M3U/M3U8文件</label>
+          <div class="flex items-center">
+            <input type="file" id="fileInput" accept=".m3u,.m3u8" class="hidden">
+            <button id="selectFileBtn" class="btn-bounce flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+              <i class="fa fa-file-text-o mr-2"></i>选择文件
+            </button>
+            <span id="fileName" class="ml-4 text-sm text-gray-500 truncate max-w-xs md:max-w-md">未选择文件</span>
+          </div>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+          <button id="saveFileBtn" class="btn-bounce flex items-center px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors" disabled>
+            <i class="fa fa-download mr-2"></i>保存文件
+          </button>
+          <button id="clearListBtn" class="btn-bounce flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors" disabled>
+            <i class="fa fa-trash mr-2"></i>清空列表
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 列表操作区 -->
+    <section class="mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">播放列表</h2>
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <input type="text" id="searchInput" placeholder="搜索..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+            <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button id="selectAllBtn" class="btn-bounce px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+              全选
+            </button>
+            <button id="deleteSelectedBtn" class="btn-bounce px-3 py-1.5 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors" disabled>
+              删除选中
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 媒体列表 -->
+    <section class="flex-grow mb-8">
+      <div class="bg-white rounded-xl overflow-hidden playlist-shadow">
+        <div id="articleList" class="max-h-[450px] overflow-y-auto scrollbar-hide space-y-4 pr-2">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-gray-50 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-4 py-3 w-12">
+                  <input type="checkbox" id="selectAllHeader" class="rounded border-gray-300 text-primary focus:ring-primary/50">
+                </th>
+                <th class="px-4 py-3 w-12">序号</th>
+                <th class="px-4 py-3">标题</th>
+                <th class="px-4 py-3">地址</th>
+                <th class="px-4 py-3 w-20">类型</th>
+                <th class="px-4 py-3 w-32">操作</th>
+              </tr>
+            </thead>
+            <tbody id="playlistTable" class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto scrollbar-slim">
+              <tr class="text-center">
+                <td colspan="6" class="px-4 py-12 text-gray-500">
+                  <div class="flex flex-col items-center">
+                    <i class="fa fa-film text-4xl mb-3 text-gray-300"></i>
+                    <p>请选择一个M3U/M3U8文件开始</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-white border-t border-gray-200 py-4">
+    <div class="container mx-auto px-4 text-center text-sm text-gray-500">
+      <p>M3U播放器 &copy; 2025 by kaichun</p>
+    </div>
+  </footer>
+
+  <!-- 帮助模态框 -->
+  <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">使用帮助</h3>
+          <button id="closeHelpBtn" class="text-gray-400 hover:text-gray-500">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <h4 class="font-medium text-gray-800 mb-2">1. 加载M3U/M3U8文件</h4>
+          <p class="text-gray-600">点击"选择文件"按钮，然后从本地选择一个M3U或M3U8格式的文件。文件加载后，播放列表将显示所有媒体项。</p>
+        </div>
+        <div>
+          <h4 class="font-medium text-gray-800 mb-2">2. 管理播放列表</h4>
+          <p class="text-gray-600">你可以对列表中的媒体项进行以下操作：</p>
+          <ul class="list-disc pl-5 mt-2 space-y-1 text-gray-600">
+            <li>点击复选框选择一个或多个项目</li>
+            <li>使用"全选"按钮快速选择所有项目</li>
+            <li>使用"删除选中"按钮删除选定的项目</li>
+            <li>点击项目行可以直接播放该媒体</li>
+            <li>在搜索框中输入关键词可以快速筛选媒体项</li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-medium text-gray-800 mb-2">3. 播放控制</h4>
+          <p class="text-gray-600">使用底部的浮动播放器可以：</p>
+          <ul class="list-disc pl-5 mt-2 space-y-1 text-gray-600">
+            <li>播放/暂停/停止当前媒体</li>
+            <li>调整音量大小</li>
+            <li>切换随机播放模式</li>
+            <li>切换循环播放模式</li>
+            <li>拖动进度条调整播放位置</li>
+            <li>点击"向上收起"按钮可以隐藏播放器</li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-medium text-gray-800 mb-2">4. 保存修改</h4>
+          <p class="text-gray-600">在对播放列表进行添加、删除或排序等操作后，点击"保存文件"按钮将修改后的列表保存为新的M3U文件。</p>
+        </div>
+      </div>
+      <div class="p-4 border-t border-gray-200 flex justify-end">
+        <button id="confirmHelpBtn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+          我知道了
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 浮动播放器 -->
+  <div id="audioPlayerContainer" class="player-fixed bg-white border-t border-gray-200 shadow-lg player-transition">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-3">
+        <div class="flex items-center gap-3">
+          <button id="togglePlayerBtn" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <i class="fa fa-chevron-down"></i>
+          </button>
+          <div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+            <i class="fa fa-music text-gray-400 text-xl"></i>
+          </div>
+          <div class="max-w-xs">
+            <h3 id="currentTitle" class="font-medium truncate">未播放任何媒体</h3>
+            <p id="currentDuration" class="text-xs text-gray-500">00:00</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+          <button id="prevBtn" class="btn-bounce flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
+            <i class="fa fa-step-backward"></i>
+          </button>
+          <button id="playPauseBtn" class="btn-bounce flex items-center justify-center w-12 h-12 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors">
+            <i class="fa fa-play"></i>
+          </button>
+          <button id="nextBtn" class="btn-bounce flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
+            <i class="fa fa-step-forward"></i>
+          </button>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <button id="shuffleBtn" class="btn-bounce flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
+            <i class="fa fa-random"></i>
+          </button>
+          <button id="loopBtn" class="btn-bounce flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
+            <i class="fa fa-repeat"></i>
+          </button>
+          <div class="hidden md:flex items-center gap-2">
+            <i class="fa fa-volume-up text-gray-500"></i>
+            <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="0.8" class="w-24 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+          </div>
+        </div>
+      </div>
+      
+      <div class="pb-3">
+        <div class="flex items-center gap-2">
+          <span id="currentTime" class="text-xs text-gray-500">00:00</span>
+          <input type="range" id="progressBar" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+          <span id="totalTime" class="text-xs text-gray-500">00:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 音频播放器 -->
+  <audio id="audioPlayer" class="hidden"></audio>
+
+  <script>
+    // 全局变量
+    let playlist = [];
+    let originalPlaylist = [];
+    let currentIndex = -1;
+    let audioPlayer = document.getElementById('audioPlayer');
+    let hls = null; // HLS.js 实例
+    let isPlaying = false;
+    let isLooping = false;
+    let isShuffling = false;
+    let shuffledIndices = [];
+    let playerIsExpanded = true;
+
+    // DOM 元素
+    const fileInput = document.getElementById('fileInput');
+    const selectFileBtn = document.getElementById('selectFileBtn');
+    const fileName = document.getElementById('fileName');
+    const saveFileBtn = document.getElementById('saveFileBtn');
+    const clearListBtn = document.getElementById('clearListBtn');
+    const playlistTable = document.getElementById('playlistTable');
+    const selectAllHeader = document.getElementById('selectAllHeader');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const searchInput = document.getElementById('searchInput');
+    const progressBar = document.getElementById('progressBar');
+    const currentTime = document.getElementById('currentTime');
+    const totalTime = document.getElementById('totalTime');
+    const volumeControl = document.getElementById('volumeControl');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const loopBtn = document.getElementById('loopBtn');
+    const helpBtn = document.getElementById('helpBtn');
+    const helpModal = document.getElementById('helpModal');
+    const closeHelpBtn = document.getElementById('closeHelpBtn');
+    const confirmHelpBtn = document.getElementById('confirmHelpBtn');
+    const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+    const togglePlayerBtn = document.getElementById('togglePlayerBtn');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const currentTitle = document.getElementById('currentTitle');
+    const currentDuration = document.getElementById('currentDuration');
+    const topNav = document.getElementById('topNav');
+
+    // 初始化
+    function init() {
+      // 绑定事件处理程序
+      selectFileBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', handleFileSelect);
+      saveFileBtn.addEventListener('click', savePlaylist);
+      clearListBtn.addEventListener('click', clearPlaylist);
+      selectAllHeader.addEventListener('change', toggleSelectAll);
+      selectAllBtn.addEventListener('click', toggleSelectAll);
+      deleteSelectedBtn.addEventListener('click', deleteSelectedItems);
+      searchInput.addEventListener('input', filterPlaylist);
+      audioPlayer.addEventListener('timeupdate', updateProgress);
+      audioPlayer.addEventListener('ended', handleTrackEnd);
+      progressBar.addEventListener('input', seek);
+      volumeControl.addEventListener('input', adjustVolume);
+      shuffleBtn.addEventListener('click', toggleShuffle);
+      loopBtn.addEventListener('click', toggleLoop);
+      helpBtn.addEventListener('click', showHelpModal);
+      closeHelpBtn.addEventListener('click', hideHelpModal);
+      confirmHelpBtn.addEventListener('click', hideHelpModal);
+      togglePlayerBtn.addEventListener('click', togglePlayer);
+      playPauseBtn.addEventListener('click', togglePlayPause);
+      prevBtn.addEventListener('click', playPrevious);
+      nextBtn.addEventListener('click', playNext);
+      topNav.addEventListener('click', scrollToTop);
+
+      // 设置音量
+      audioPlayer.volume = volumeControl.value;
+      
+      // 初始隐藏播放器
+      updatePlayerVisibility();
+    }
+
+    // 滚动到顶部
+    function scrollToTop() {
+      const articleList = document.getElementById('articleList');
+      articleList.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    // 处理文件选择
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      fileName.textContent = file.name;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+        parseM3U(content);
+        updatePlaylistTable();
+        updateButtonStates();
+      };
+      reader.readAsText(file);
+    }
+
+    // 解析M3U/M3U8文件内容
+    function parseM3U(content) {
+      playlist = [];
+      originalPlaylist = [];
+      
+      const lines = content.split('\n');
+      let currentItem = null;
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        if (line.startsWith('#EXTINF:')) {
+          // 解析元信息行
+          const durationTitleMatch = line.match(/#EXTINF:(-?\d+)(.*),(.*)/);
+          if (durationTitleMatch) {
+            currentItem = {
+              duration: parseInt(durationTitleMatch[1]),
+              title: durationTitleMatch[3].trim(),
+              url: '',
+              selected: false,
+              type: 'unknown'
+            };
+            
+            // 尝试提取其他元信息
+            const metaInfo = durationTitleMatch[2].trim();
+            if (metaInfo) {
+              const metaPairs = metaInfo.split('" ');
+              metaPairs.forEach(pair => {
+                const keyValue = pair.split('="');
+                if (keyValue.length === 2) {
+                  const key = keyValue[0].trim();
+                  const value = keyValue[1].replace('"', '').trim();
+                  currentItem[key] = value;
+                }
+              });
+            }
+          }
+        } else if (line && line.startsWith('#') === false && currentItem) {
+          // 解析URL行
+          currentItem.url = line;
+          
+          // 检测媒体类型
+          if (line.toLowerCase().endsWith('.m3u8')) {
+            currentItem.type = 'm3u8';
+          } else if (line.toLowerCase().endsWith('.mp3') || 
+                     line.toLowerCase().endsWith('.wav') || 
+                     line.toLowerCase().endsWith('.ogg') || 
+                     line.toLowerCase().endsWith('.flac')) {
+            currentItem.type = 'audio';
+          } else if (line.toLowerCase().endsWith('.mp4') || 
+                     line.toLowerCase().endsWith('.mkv') || 
+                     line.toLowerCase().endsWith('.avi') || 
+                     line.toLowerCase().endsWith('.mov')) {
+            currentItem.type = 'video';
+          } else {
+            currentItem.type = 'unknown';
+          }
+          
+          playlist.push(currentItem);
+          originalPlaylist.push({...currentItem});
+          currentItem = null;
+        }
+      }
+    }
+
+    // 更新播放列表表格
+    function updatePlaylistTable() {
+      playlistTable.innerHTML = '';
+      
+      if (playlist.length === 0) {
+        playlistTable.innerHTML = `
+          <tr class="text-center">
+            <td colspan="6" class="px-4 py-12 text-gray-500">
+              <div class="flex flex-col items-center">
+                <i class="fa fa-film text-4xl mb-3 text-gray-300"></i>
+                <p>播放列表为空</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      playlist.forEach((item, index) => {
+        const isCurrent = index === currentIndex;
+        const row = document.createElement('tr');
+        row.className = `playlist-item-hover cursor-pointer ${isCurrent ? 'bg-primary/5 border-l-4 border-primary' : 'hover:bg-gray-50'}`;
+        row.setAttribute('data-index', index);
+        
+        // 格式化时长
+        let durationText = item.duration >= 0 
+          ? formatTime(item.duration) 
+          : '未知';
+          
+        // 媒体类型标签
+        let typeBadge = '';
+        switch(item.type) {
+          case 'm3u8':
+            typeBadge = '<span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">M3U8</span>';
+            break;
+          case 'audio':
+            typeBadge = '<span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">音频</span>';
+            break;
+          case 'video':
+            typeBadge = '<span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full">视频</span>';
+            break;
+          default:
+            typeBadge = '<span class="px-2 py-0.5 bg-gray-100 text-gray-800 text-xs rounded-full">未知</span>';
+        }
+          
+        row.innerHTML = `
+          <td class="px-4 py-3">
+            <input type="checkbox" class="item-checkbox rounded border-gray-300 text-primary focus:ring-primary/50" ${item.selected ? 'checked' : ''}>
+          </td>
+          <td class="px-4 py-3 font-medium">${index + 1}</td>
+          <td class="px-4 py-3 font-medium whitespace-normal">
+            <div class="flex items-center">
+              <span>${item.title}</span>
+              ${isCurrent && isPlaying ? '<i class="fa fa-volume-up ml-2 text-primary animate-pulse"></i>' : ''}
+            </div>
+          </td>
+          <td class="px-4 py-3 text-gray-600 whitespace-normal">${item.url}</td>
+          <td class="px-4 py-3">${typeBadge}</td>
+          <td class="px-4 py-3">
+            <div class="flex space-x-2">
+              <button class="delete-item-btn p-1.5 text-danger hover:bg-danger/10 rounded-full" title="删除">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        
+        // 绑定行点击事件
+        row.addEventListener('click', (e) => {
+          if (!e.target.closest('button') && !e.target.closest('input')) {
+            playItem(index);
+          }
+        });
+        
+        // 绑定复选框事件
+        const checkbox = row.querySelector('.item-checkbox');
+        checkbox.addEventListener('change', (e) => {
+          e.stopPropagation();
+          playlist[index].selected = checkbox.checked;
+          updateButtonStates();
+        });
+        
+        // 绑定删除按钮事件
+        const deleteBtn = row.querySelector('.delete-item-btn');
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteItem(index);
+        });
+        
+        playlistTable.appendChild(row);
+      });
+    }
+
+    // 播放指定项
+    function playItem(index) {
+      if (index >= 0 && index < playlist.length) {
+        currentIndex = index;
+        const item = playlist[index];
+        
+        // 如果有HLS实例，先销毁它
+        if (hls) {
+          hls.destroy();
+          hls = null;
+        }
+        
+        // 检查是否是M3U8格式
+        if (item.type === 'm3u8') {
+          if (Hls.isSupported()) {
+            hls = new Hls();
+            hls.loadSource(item.url);
+            hls.attachMedia(audioPlayer);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+              audioPlayer.play().then(() => {
+                isPlaying = true;
+                updateButtonStates();
+                updatePlaylistTable();
+                updatePlayerInfo();
+                audioPlayerContainer.classList.remove('player-hidden');
+              }).catch(error => {
+                console.error('播放失败:', error);
+                alert(`无法播放此媒体: ${error.message}`);
+              });
+            });
+            
+            hls.on(Hls.Events.ERROR, function(event, data) {
+              console.error('HLS错误:', event, data);
+              if (data.fatal) {
+                switch(data.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    console.log('尝试恢复网络错误...');
+                    hls.startLoad();
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
+                    console.log('尝试恢复媒体错误...');
+                    hls.recoverMediaError();
+                    break;
+                  default:
+                    console.log('无法恢复的错误，停止播放');
+                    hls.destroy();
+                    hls = null;
+                    isPlaying = false;
+                    updateButtonStates();
+                    updatePlaylistTable();
+                    break;
+                }
+              }
+            });
+          } 
+          // 浏览器原生支持HLS (如Safari)
+          else if (audioPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+            audioPlayer.src = item.url;
+            audioPlayer.play().then(() => {
+              isPlaying = true;
+              updateButtonStates();
+              updatePlaylistTable();
+              updatePlayerInfo();
+              audioPlayerContainer.classList.remove('player-hidden');
+            }).catch(error => {
+              console.error('播放失败:', error);
+              alert(`无法播放此媒体: ${error.message}`);
+            });
+          } else {
+            alert('您的浏览器不支持HLS播放，请尝试使用其他浏览器');
+            return;
+          }
+        } 
+        // 普通音频格式
+        else {
+          audioPlayer.src = item.url;
+          audioPlayer.play().then(() => {
+            isPlaying = true;
+            updateButtonStates();
+            updatePlaylistTable();
+            updatePlayerInfo();
+            audioPlayerContainer.classList.remove('player-hidden');
+          }).catch(error => {
+            console.error('播放失败:', error);
+            alert(`无法播放此媒体: ${error.message}`);
+          });
+        }
+      }
+    }
+
+    // 播放/暂停切换
+    function togglePlayPause() {
+      if (playlist.length === 0) return;
+      
+      if (isPlaying) {
+        pauseAll();
+      } else {
+        if (currentIndex === -1) {
+          currentIndex = 0;
+          playItem(currentIndex);
+        } else {
+          playAll();
+        }
+      }
+    }
+
+    // 播放全部
+    function playAll() {
+      if (playlist.length > 0) {
+        audioPlayer.play().then(() => {
+          isPlaying = true;
+          updateButtonStates();
+          updatePlaylistTable();
+          updatePlayerInfo();
+          audioPlayerContainer.classList.remove('player-hidden');
+        });
+      }
+    }
+
+    // 暂停全部
+    function pauseAll() {
+      audioPlayer.pause();
+      isPlaying = false;
+      updateButtonStates();
+      updatePlaylistTable();
+      updatePlayerInfo();
+    }
+
+    // 播放上一个
+    function playPrevious() {
+      if (playlist.length === 0) return;
+      
+      let prevIndex;
+      if (isShuffling && shuffledIndices.length > 0) {
+        const currentShuffleIndex = shuffledIndices.indexOf(currentIndex);
+        prevIndex = shuffledIndices[(currentShuffleIndex - 1 + shuffledIndices.length) % shuffledIndices.length];
+      } else {
+        prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+      }
+      
+      playItem(prevIndex);
+    }
+
+    // 播放下一个
+    function playNext() {
+      if (playlist.length === 0) return;
+      
+      let nextIndex;
+      if (isShuffling && shuffledIndices.length > 0) {
+        const currentShuffleIndex = shuffledIndices.indexOf(currentIndex);
+        nextIndex = shuffledIndices[(currentShuffleIndex + 1) % shuffledIndices.length];
+      } else {
+        nextIndex = (currentIndex + 1) % playlist.length;
+      }
+      
+      playItem(nextIndex);
+    }
+
+    // 更新进度条和时间显示
+    function updateProgress() {
+      if (audioPlayer.duration) {
+        progressBar.max = audioPlayer.duration;
+        progressBar.value = audioPlayer.currentTime;
+        currentTime.textContent = formatTime(audioPlayer.currentTime);
+        totalTime.textContent = formatTime(audioPlayer.duration);
+      }
+    }
+
+    // 调整播放位置
+    function seek() {
+      audioPlayer.currentTime = progressBar.value;
+    }
+
+    // 调整音量
+    function adjustVolume() {
+      audioPlayer.volume = volumeControl.value;
+    }
+
+    // 切换随机播放
+    function toggleShuffle() {
+      isShuffling = !isShuffling;
+      if (isShuffling) {
+        // 生成随机索引数组
+        shuffledIndices = Array.from({length: playlist.length}, (_, i) => i);
+        // Fisher-Yates 洗牌算法
+        for (let i = shuffledIndices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+        }
+        shuffleBtn.classList.add('bg-primary/10', 'text-primary');
+        shuffleBtn.classList.remove('bg-gray-200', 'text-gray-700');
+      } else {
+        shuffleBtn.classList.remove('bg-primary/10', 'text-primary');
+        shuffleBtn.classList.add('bg-gray-200', 'text-gray-700');
+      }
+    }
+
+    // 切换循环播放
+    function toggleLoop() {
+      isLooping = !isLooping;
+      if (isLooping) {
+        loopBtn.classList.add('bg-primary/10', 'text-primary');
+        loopBtn.classList.remove('bg-gray-200', 'text-gray-700');
+      } else {
+        loopBtn.classList.remove('bg-primary/10', 'text-primary');
+        loopBtn.classList.add('bg-gray-200', 'text-gray-700');
+      }
+    }
+
+    // 处理曲目播放结束
+    function handleTrackEnd() {
+      if (isLooping) {
+        // 单曲循环
+        audioPlayer.currentTime = 0;
+        audioPlayer.play();
+        return;
+      }
+      
+      // 播放下一首
+      playNext();
+    }
+
+    // 全选/取消全选
+    function toggleSelectAll() {
+      const isChecked = selectAllHeader.checked;
+      playlist.forEach(item => {
+        item.selected = isChecked;
+      });
+      updatePlaylistTable();
+      updateButtonStates();
+    }
+
+    // 删除选中项
+    function deleteSelectedItems() {
+      if (confirm('确定要删除选中的项目吗？')) {
+        playlist = playlist.filter(item => !item.selected);
+        if (currentIndex >= playlist.length) {
+          currentIndex = playlist.length - 1;
+        }
+        updatePlaylistTable();
+        updateButtonStates();
+        updatePlayerVisibility();
+      }
+    }
+
+    // 删除单个项目
+    function deleteItem(index) {
+      if (confirm('确定要删除此项目吗？')) {
+        playlist.splice(index, 1);
+        if (currentIndex >= playlist.length) {
+          currentIndex = playlist.length - 1;
+        } else if (currentIndex === index) {
+          if (playlist.length > 0) {
+            playItem(currentIndex);
+          } else {
+            stopAll();
+          }
+        }
+        updatePlaylistTable();
+        updateButtonStates();
+        updatePlayerVisibility();
+      }
+    }
+
+    // 清空播放列表
+    function clearPlaylist() {
+      if (confirm('确定要清空整个播放列表吗？')) {
+        playlist = [];
+        originalPlaylist = [];
+        currentIndex = -1;
+        stopAll();
+        updatePlaylistTable();
+        updateButtonStates();
+        fileName.textContent = '未选择文件';
+        updatePlayerVisibility();
+      }
+    }
+
+    // 保存播放列表
+    function savePlaylist() {
+      if (playlist.length === 0) {
+        alert('播放列表为空，无法保存');
+        return;
+      }
+      
+      let content = '#EXTM3U\n';
+      playlist.forEach(item => {
+        content += `#EXTINF:${item.duration},${item.title}\n`;
+        content += `${item.url}\n`;
+      });
+      
+      const blob = new Blob([content], {type: 'audio/x-mpegurl'});
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'playlist.m3u';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // 筛选播放列表
+    function filterPlaylist() {
+      const searchTerm = searchInput.value.toLowerCase();
+      
+      if (!searchTerm) {
+        playlist = [...originalPlaylist];
+        updatePlaylistTable();
+        return;
+      }
+      
+      playlist = originalPlaylist.filter(item => {
+        return item.title.toLowerCase().includes(searchTerm) || 
+               item.url.toLowerCase().includes(searchTerm);
+      });
+      
+      updatePlaylistTable();
+    }
+
+    // 停止所有播放
+    function stopAll() {
+      audioPlayer.pause();
+      audioPlayer.src = '';
+      if (hls) {
+        hls.destroy();
+        hls = null;
+      }
+      isPlaying = false;
+      updateButtonStates();
+      updatePlaylistTable();
+      updatePlayerInfo();
+    }
+
+    // 更新按钮状态
+    function updateButtonStates() {
+      saveFileBtn.disabled = playlist.length === 0;
+      clearListBtn.disabled = playlist.length === 0;
+      
+      const selectedCount = playlist.filter(item => item.selected).length;
+      deleteSelectedBtn.disabled = selectedCount === 0;
+      
+      // 更新播放/暂停按钮图标
+      if (isPlaying) {
+        playPauseBtn.innerHTML = '<i class="fa fa-pause"></i>';
+      } else {
+        playPauseBtn.innerHTML = '<i class="fa fa-play"></i>';
+      }
+      
+      // 更新向上收起/向下展开按钮图标
+      if (playerIsExpanded) {
+        togglePlayerBtn.innerHTML = '<i class="fa fa-chevron-down"></i>';
+      } else {
+        togglePlayerBtn.innerHTML = '<i class="fa fa-chevron-up"></i>';
+      }
+    }
+
+    // 更新播放器信息
+    function updatePlayerInfo() {
+      if (currentIndex >= 0 && currentIndex < playlist.length) {
+        const item = playlist[currentIndex];
+        currentTitle.textContent = item.title;
+        currentDuration.textContent = item.duration >= 0 ? formatTime(item.duration) : '未知';
+      } else {
+        currentTitle.textContent = '未播放任何媒体';
+        currentDuration.textContent = '00:00';
+      }
+    }
+
+    // 更新播放器可见性
+    function updatePlayerVisibility() {
+      if (playlist.length === 0 || currentIndex === -1) {
+        audioPlayerContainer.classList.add('player-hidden');
+      } else {
+        audioPlayerContainer.classList.remove('player-hidden');
+      }
+    }
+
+    // 切换播放器展开/收起状态
+    function togglePlayer() {
+      playerIsExpanded = !playerIsExpanded;
+      if (playerIsExpanded) {
+        audioPlayerContainer.classList.remove('player-hidden');
+      } else {
+        audioPlayerContainer.classList.add('player-hidden');
+      }
+      updateButtonStates();
+    }
+
+    // 切换主题
+    function toggleTheme() {
+      if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        themeToggle.innerHTML = '<i class="fa fa-moon-o text-dark"></i>';
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.innerHTML = '<i class="fa fa-sun-o text-white"></i>';
+      }
+    }
+
+    // 格式化时间
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    // 显示帮助模态框
+    function showHelpModal() {
+      helpModal.classList.remove('hidden');
+    }
+
+    // 隐藏帮助模态框
+    function hideHelpModal() {
+      helpModal.classList.add('hidden');
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

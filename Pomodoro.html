@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄钟定时器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#F97316',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .timer-shadow {
+                box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);
+            }
+            .time-flash {
+                animation: timeFlash 0.5s infinite alternate;
+            }
+            @keyframes timeFlash {
+                0% { opacity: 1; }
+                100% { opacity: 0.3; }
+            }
+            .progress-ring-circle {
+                transition: stroke-dashoffset 0.35s;
+                transform-origin: 50% 50%;
+            }
+        }
+    </style>
+	<style type='text/css'>
+		p {
+			display:none;
+		}
+	</style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen font-inter text-dark flex flex-col items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden">
+        <!-- 头部区域 -->
+        <div class="bg-primary text-white p-6 text-center">
+            <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold">番茄钟定时器</h1>
+            <p class="text-blue-100 mt-2">专注工作，定时休息</p>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="p-6">
+            <!-- 时间设置 -->
+            <div class="mb-8">
+                <label class="block text-gray-700 text-sm font-medium mb-2">设置时间 (分钟)</label>
+                <div class="flex items-center">
+                    <button id="decrease" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-l-lg transition-all duration-300">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <input type="number" id="timeInput" min="1" max="120" value="25" 
+                           class="w-full text-center py-2 px-4 border-y border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-300">
+                    <button id="increase" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-r-lg transition-all duration-300">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1 text-center">范围: 1-120分钟</p>
+            </div>
+            
+            <!-- 倒计时显示 -->
+            <div class="relative flex justify-center mb-8">
+                <svg class="w-64 h-64" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#F1F5F9" stroke-width="8" />
+                    <circle id="progress-ring" cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" stroke-width="8" 
+                            stroke-dasharray="282.74" stroke-dashoffset="0" class="progress-ring-circle" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <div id="timerDisplay" class="text-[clamp(2.5rem,8vw,4rem)] font-bold text-dark">25:00</div>
+                    <div id="status" class="text-gray-500 text-sm mt-2">准备就绪</div>
+                </div>
+            </div>
+            
+            <!-- 控制按钮 - 改为两个按钮 -->
+            <div class="grid grid-cols-2 gap-3 mb-8">
+                <button id="startStopBtn" class="bg-primary hover:bg-primary/90 text-white py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center">
+                    <i class="fa-solid fa-play mr-2"></i> 开始
+                </button>
+                <button id="pauseContinueBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center" disabled>
+                    <i class="fa-solid fa-pause mr-2"></i> 暂停
+                </button>
+            </div>
+            
+            <!-- 随机提醒设置 -->
+            <div class="bg-gray-50 p-4 rounded-xl mb-6">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">随机提醒设置</h3>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">倒计时期间随机提醒</span>
+                    <label class="relative inline-block w-10 h-5">
+                        <input type="checkbox" id="randomAlert" class="opacity-0 w-0 h-0 peer" checked>
+                        <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 rounded-full peer-checked:bg-primary transition-all duration-300 before:absolute before:content-[''] before:h-4 before:w-4 before:left-0.5 before:bottom-0.5 before:bg-white before:rounded-full before:transition-all before:duration-300 peer-checked:before:translate-x-5"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 统计信息 -->
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="bg-blue-50 p-3 rounded-lg">
+                    <div class="text-xs text-gray-500">专注次数</div>
+                    <div id="sessionCount" class="text-lg font-bold text-primary">0</div>
+                </div>
+                <div class="bg-orange-50 p-3 rounded-lg">
+                    <div class="text-xs text-gray-500">总专注时间</div>
+                    <div id="totalTime" class="text-lg font-bold text-secondary">0分钟</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM 元素
+            const timeInput = document.getElementById('timeInput');
+            const decreaseBtn = document.getElementById('decrease');
+            const increaseBtn = document.getElementById('increase');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const statusDisplay = document.getElementById('status');
+            const startStopBtn = document.getElementById('startStopBtn');
+            const pauseContinueBtn = document.getElementById('pauseContinueBtn');
+            const randomAlertToggle = document.getElementById('randomAlert');
+            const sessionCountEl = document.getElementById('sessionCount');
+            const totalTimeEl = document.getElementById('totalTime');
+            const progressRing = document.getElementById('progress-ring');
+            
+            // 状态变量
+            let timer = null;
+            let totalSeconds = 25 * 60;
+            let remainingSeconds = totalSeconds;
+            let isRunning = false;
+            let isPaused = false;
+            let sessionCount = 0;
+            let totalFocusTime = 0;
+            let randomAlertInterval = null; // 随机提醒间隔
+            let nextAlertTime = null; // 下一次提醒时间
+            let isInAlertCycle = false; // 是否在提醒周期中
+            let isAlerting = false; // 是否正在提醒
+            const CIRCUMFERENCE = 2 * Math.PI * 45; // 2πr
+            let isSoundInitialized = false;
+            
+            // 音频上下文（用于生成本地beep声）
+            let audioContext = null;
+            
+            // 初始化
+            updateTimerDisplay();
+            updateProgressRing();
+            loadSettings();
+            
+            // 初始化声音
+            function initializeSounds() {
+                if (isSoundInitialized) return;
+                
+                // 创建音频上下文
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    isSoundInitialized = true;
+                    console.log('音频上下文已初始化');
+                } catch (e) {
+                    console.error('无法创建音频上下文:', e);
+                }
+                
+                // 在用户第一次交互时解除自动播放限制
+                const unlockAudio = () => {
+                    if (audioContext && audioContext.state === 'suspended') {
+                        audioContext.resume().then(() => {
+                            console.log('音频上下文已恢复');
+                        }).catch(e => {
+                            console.error('无法恢复音频上下文:', e);
+                        });
+                    }
+                    
+                    // 移除事件监听器
+                    document.removeEventListener('click', unlockAudio);
+                    document.removeEventListener('touchstart', unlockAudio);
+                };
+                
+                document.addEventListener('click', unlockAudio, { once: true });
+                document.addEventListener('touchstart', unlockAudio, { once: true });
+            }
+            
+            // 生成beep声音
+            function playBeep(frequency, duration, volume) {
+                if (!audioContext || !isSoundInitialized) {
+                    console.error('音频未初始化，无法播放beep');
+                    return;
+                }
+                
+                // 创建振荡器和增益节点
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000);
+                
+                // 连接节点
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // 开始和停止声音
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration / 1000);
+                
+                // 释放资源
+                oscillator.onended = () => {
+                    oscillator.disconnect();
+                    gainNode.disconnect();
+                };
+            }
+            
+            // 播放完成提示音（500Hz 低频，持续 2秒）
+            function playCompleteSound() {
+                playBeep(500, 2000, 0.8); 
+            }
+            
+            // 播放随机提醒音（880Hz 高频，持续 1秒）
+            function playRandomAlertSound() {
+                playBeep(880, 1000, 0.6); 
+            }
+            
+            // 事件监听器
+            decreaseBtn.addEventListener('click', () => {
+                if (!isRunning && timeInput.value > 1) {
+                    timeInput.value = parseInt(timeInput.value) - 1;
+                    updateTimer();
+                }
+            });
+            
+            increaseBtn.addEventListener('click', () => {
+                if (!isRunning && timeInput.value < 120) {
+                    timeInput.value = parseInt(timeInput.value) + 1;
+                    updateTimer();
+                }
+            });
+            
+            timeInput.addEventListener('change', () => {
+                if (!isRunning) {
+                    // 限制输入范围
+                    if (timeInput.value < 1) timeInput.value = 1;
+                    if (timeInput.value > 120) timeInput.value = 120;
+                    updateTimer();
+                } else {
+                    // 如果正在运行，恢复原来的值
+                    timeInput.value = Math.floor(totalSeconds / 60);
+                }
+            });
+            
+            timeInput.addEventListener('keydown', (e) => {
+                // 只允许数字、删除和方向键
+                if (!/[0-9]|Backspace|ArrowUp|ArrowDown|Tab/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            
+            startStopBtn.addEventListener('click', () => {
+                if (!isRunning) {
+                    initializeSounds();
+                    startTimer();
+                } else {
+                    stopTimer();
+                }
+            });
+            
+            pauseContinueBtn.addEventListener('click', () => {
+                if (!isPaused) {
+                    pauseTimer();
+                } else {
+                    continueTimer();
+                }
+            });
+            
+            // 修复随机提醒开关事件处理
+            randomAlertToggle.addEventListener('change', (e) => {
+                if (isRunning && !isPaused) {
+                    if (e.target.checked) {
+                        // 如果开启提醒且剩余时间足够，启动随机提醒
+                        if (remainingSeconds > 6 * 60) {
+                            startRandomAlertCycle();
+                        }
+                    } else {
+                        // 如果关闭提醒，停止随机提醒
+                        resetRandomAlert();
+                    }
+                }
+                saveSettings();
+            });
+            
+            // 函数定义
+            function updateTimer() {
+                totalSeconds = parseInt(timeInput.value) * 60;
+                remainingSeconds = totalSeconds;
+                updateTimerDisplay();
+                updateProgressRing();
+                resetRandomAlert(); // 重置随机提醒状态
+                saveSettings();
+            }
+            
+            function startTimer() {
+                if (isRunning) return;
+                
+                isRunning = true;
+                isPaused = false;
+                statusDisplay.textContent = '专注中...';
+                startStopBtn.innerHTML = '<i class="fa-solid fa-stop mr-2"></i> 停止';
+                startStopBtn.classList.remove('bg-primary');
+                startStopBtn.classList.add('bg-red-500');
+                pauseContinueBtn.disabled = false;
+                pauseContinueBtn.innerHTML = '<i class="fa-solid fa-pause mr-2"></i> 暂停';
+                timeInput.disabled = true;
+                decreaseBtn.disabled = true;
+                increaseBtn.disabled = true;
+                
+                // 初始化随机提醒
+                if (randomAlertToggle.checked && totalSeconds > 6 * 60) {
+                    startRandomAlertCycle();
+                }
+                
+                timer = setInterval(() => {
+                    remainingSeconds--;
+                    updateTimerDisplay();
+                    updateProgressRing();
+                    
+                    // 检查随机提醒
+                    checkRandomAlert();
+                    
+                    // 检查定时器是否结束
+                    if (remainingSeconds <= 0) {
+                        completeTimer();
+                    }
+                }, 1000);
+            }
+            
+            function pauseTimer() {
+                if (!isRunning || isPaused) return;
+                
+                clearInterval(timer);
+                isPaused = true;
+                statusDisplay.textContent = '已暂停';
+                pauseContinueBtn.innerHTML = '<i class="fa-solid fa-play mr-2"></i> 继续';
+                
+                // 暂停随机提醒
+                if (isInAlertCycle && nextAlertTime) {
+                    const alertRemaining = nextAlertTime - remainingSeconds;
+                    if (alertRemaining > 0) {
+                        clearTimeout(randomAlertInterval);
+                    }
+                }
+                
+                saveSettings();
+            }
+            
+            function continueTimer() {
+                if (!isRunning || !isPaused) return;
+                
+                isPaused = false;
+                statusDisplay.textContent = '专注中...';
+                pauseContinueBtn.innerHTML = '<i class="fa-solid fa-pause mr-2"></i> 暂停';
+                
+                // 继续随机提醒
+                if (randomAlertToggle.checked && totalSeconds > 6 * 60 && isInAlertCycle) {
+                    startRandomAlertCycle();
+                }
+                
+                timer = setInterval(() => {
+                    remainingSeconds--;
+                    updateTimerDisplay();
+                    updateProgressRing();
+                    
+                    // 检查随机提醒
+                    checkRandomAlert();
+                    
+                    // 检查定时器是否结束
+                    if (remainingSeconds <= 0) {
+                        completeTimer();
+                    }
+                }, 1000);
+                
+                saveSettings();
+            }
+            
+            function stopTimer() {
+                clearInterval(timer);
+                isRunning = false;
+                isPaused = false;
+                remainingSeconds = totalSeconds;
+                updateTimerDisplay();
+                updateProgressRing();
+                statusDisplay.textContent = '已停止';
+                startStopBtn.innerHTML = '<i class="fa-solid fa-play mr-2"></i> 开始';
+                startStopBtn.classList.remove('bg-red-500');
+                startStopBtn.classList.add('bg-primary');
+                pauseContinueBtn.disabled = true;
+                pauseContinueBtn.innerHTML = '<i class="fa-solid fa-pause mr-2"></i> 暂停';
+                timeInput.disabled = false;
+                decreaseBtn.disabled = false;
+                increaseBtn.disabled = false;
+                resetRandomAlert(); // 重置随机提醒状态
+                timerDisplay.classList.remove('time-flash');
+                isAlerting = false; // 重置提醒状态
+                
+                saveSettings();
+            }
+            
+            function completeTimer() {
+                clearInterval(timer);
+                isRunning = false;
+                isPaused = false;
+                
+                // 播放完成声音
+                playCompleteSound();
+                
+                // 更新统计
+                sessionCount++;
+                totalFocusTime += Math.floor(totalSeconds / 60);
+                sessionCountEl.textContent = sessionCount;
+                totalTimeEl.textContent = totalFocusTime + '分钟';
+                
+                // 仅时间显示闪烁
+                statusDisplay.textContent = '完成!';
+                timerDisplay.classList.add('time-flash');
+                
+                // 保存统计
+                saveSettings();
+                
+                setTimeout(() => {
+                    timerDisplay.classList.remove('time-flash');
+                    startStopBtn.innerHTML = '<i class="fa-solid fa-play mr-2"></i> 开始';
+                    startStopBtn.classList.remove('bg-red-500');
+                    startStopBtn.classList.add('bg-primary');
+                    pauseContinueBtn.disabled = true;
+                    pauseContinueBtn.innerHTML = '<i class="fa-solid fa-pause mr-2"></i> 暂停';
+                    timeInput.disabled = false;
+                    decreaseBtn.disabled = false;
+                    increaseBtn.disabled = false;
+                    resetRandomAlert(); // 重置随机提醒状态
+                    isAlerting = false; // 重置提醒状态
+                    
+                    // 重置为默认时间
+                    timeInput.value = 25;
+                    updateTimer();
+                }, 3000); // 3秒后恢复正常状态
+            }
+            
+            // 随机提醒相关函数
+            function resetRandomAlert() {
+                isInAlertCycle = false;
+                randomAlertInterval = null;
+                nextAlertTime = null;
+                clearTimeout(randomAlertInterval);
+                isAlerting = false; // 重置提醒状态
+            }
+            
+            function startRandomAlertCycle() {
+                if (!isRunning || isPaused || remainingSeconds <= 6 * 60 || !randomAlertToggle.checked || isAlerting) {
+                    isInAlertCycle = false;
+                    return;
+                }
+                
+                isInAlertCycle = true;
+                generateNextAlertTime();
+            }
+            
+            function generateNextAlertTime() {
+                if (!isRunning || isPaused || remainingSeconds <= 6 * 60 || !randomAlertToggle.checked || isAlerting) {
+                    isInAlertCycle = false;
+                    return;
+                }
+                
+                // 生成300-360秒的随机间隔（5-6分钟）
+                const randomSeconds = Math.floor(Math.random() * 60) + 300;
+                
+                nextAlertTime = remainingSeconds - randomSeconds;
+                
+                // 确保有足够的时间显示提醒
+                if (nextAlertTime > 6 * 60) {
+                    // 设置提醒定时器
+                    randomAlertInterval = setTimeout(() => {
+                        triggerRandomAlert();
+                    }, randomSeconds * 1000);
+                } else {
+                    isInAlertCycle = false;
+                }
+            }
+            
+            function triggerRandomAlert() {
+                if (!isRunning || isPaused || remainingSeconds <= 6 * 60 || !randomAlertToggle.checked || isAlerting) {
+                    isInAlertCycle = false;
+                    return;
+                }
+                
+                isAlerting = true; // 设置正在提醒状态
+                
+                // 播放第一次提示音
+                playRandomAlertSound();
+                timerDisplay.classList.add('time-flash');
+                
+                setTimeout(() => {
+                    timerDisplay.classList.remove('time-flash');
+                    
+                    // 10秒后播放第二次提示音
+                    setTimeout(() => {
+                        if (isRunning && !isPaused && remainingSeconds > 6 * 60 && randomAlertToggle.checked) {
+                            playRandomAlertSound();
+                            timerDisplay.classList.add('time-flash');
+                            
+                            setTimeout(() => {
+                                timerDisplay.classList.remove('time-flash');
+                                isAlerting = false; // 重置提醒状态
+                                // 生成下一个随机间隔
+                                generateNextAlertTime();
+                            }, 1000);
+                        } else {
+                            isAlerting = false; // 重置提醒状态
+                        }
+                    }, 10000); // 10秒后
+                }, 1000); // 1秒后移除闪烁
+            }
+            
+            function checkRandomAlert() {
+                if (isInAlertCycle && nextAlertTime && remainingSeconds <= nextAlertTime && randomAlertToggle.checked && !isAlerting) {
+                    triggerRandomAlert();
+                }
+            }
+            
+            function updateTimerDisplay() {
+                const minutes = Math.floor(remainingSeconds / 60);
+                const seconds = remainingSeconds % 60;
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            function updateProgressRing() {
+                const progress = remainingSeconds / totalSeconds;
+                const dashoffset = CIRCUMFERENCE * (1 - progress);
+                progressRing.style.strokeDashoffset = dashoffset;
+            }
+            
+            function loadSettings() {
+                if (typeof chrome !== 'undefined' && chrome.storage) {
+                    chrome.storage.local.get([
+                        'totalSeconds', 
+                        'remainingSeconds', 
+                        'isRunning', 
+                        'isPaused',
+                        'sessionCount',
+                        'totalFocusTime',
+                        'timeSetting',
+                        'randomAlert'
+                    ], (result) => {
+                        if (result.totalSeconds) totalSeconds = result.totalSeconds;
+                        if (result.remainingSeconds) remainingSeconds = result.remainingSeconds;
+                        if (typeof result.isRunning === 'boolean') isRunning = result.isRunning;
+                        if (typeof result.isPaused === 'boolean') isPaused = result.isPaused;
+                        if (typeof result.sessionCount === 'number') sessionCount = result.sessionCount;
+                        if (typeof result.totalFocusTime === 'number') totalFocusTime = result.totalFocusTime;
+                        if (result.timeSetting) {
+                            timeInput.value = result.timeSetting;
+                            totalSeconds = result.timeSetting * 60;
+                        }
+                        if (typeof result.randomAlert === 'boolean') randomAlertToggle.checked = result.randomAlert;
+                        
+                        // 更新UI状态
+                        updateTimerDisplay();
+                        updateProgressRing();
+                        
+                        if (isRunning) {
+                            if (isPaused) {
+                                statusDisplay.textContent = '已暂停';
+                                pauseContinueBtn.innerHTML = '<i class="fa-solid fa-play mr-2"></i> 继续';
+                                pauseContinueBtn.disabled = false;
+                            } else {
+                                statusDisplay.textContent = '专注中...';
+                                startStopBtn.innerHTML = '<i class="fa-solid fa-stop mr-2"></i> 停止';
+                                startStopBtn.classList.remove('bg-primary');
+                                startStopBtn.classList.add('bg-red-500');
+                                pauseContinueBtn.disabled = false;
+                                pauseContinueBtn.innerHTML = '<i class="fa-solid fa-pause mr-2"></i> 暂停';
+                                timeInput.disabled = true;
+                                decreaseBtn.disabled = true;
+                                increaseBtn.disabled = true;
+                                
+                                // 重新启动定时器
+                                timer = setInterval(() => {
+                                    remainingSeconds--;
+                                    updateTimerDisplay();
+                                    updateProgressRing();
+                                    
+                                    // 检查随机提醒
+                                    checkRandomAlert();
+                                    
+                                    // 检查定时器是否结束
+                                    if (remainingSeconds <= 0) {
+                                        completeTimer();
+                                    }
+                                }, 1000);
+                            }
+                        }
+                        
+                        // 更新统计信息
+                        sessionCountEl.textContent = sessionCount;
+                        totalTimeEl.textContent = totalFocusTime + '分钟';
+                    });
+                } else {
+                    // 如果不是Chrome环境，使用localStorage
+                    const savedTime = localStorage.getItem('timeSetting');
+                    if (savedTime) {
+                        timeInput.value = savedTime;
+                        totalSeconds = parseInt(savedTime) * 60;
+                        remainingSeconds = totalSeconds;
+                    }
+                    
+                    const savedRandomAlert = localStorage.getItem('randomAlert');
+                    if (savedRandomAlert !== null) {
+                        randomAlertToggle.checked = savedRandomAlert === 'true';
+                    }
+                    
+                    const savedSessionCount = localStorage.getItem('sessionCount');
+                    if (savedSessionCount) {
+                        sessionCount = parseInt(savedSessionCount);
+                        sessionCountEl.textContent = sessionCount;
+                    }
+                    
+                    const savedTotalTime = localStorage.getItem('totalFocusTime');
+                    if (savedTotalTime) {
+                        totalFocusTime = parseInt(savedTotalTime);
+                        totalTimeEl.textContent = totalFocusTime + '分钟';
+                    }
+                }
+            }
+            
+            function saveSettings() {
+                if (typeof chrome !== 'undefined' && chrome.storage) {
+                    chrome.storage.local.set({
+                        totalSeconds,
+                        remainingSeconds,
+                        isRunning,
+                        isPaused,
+                        timeSetting: parseInt(timeInput.value),
+                        randomAlert: randomAlertToggle.checked,
+                        sessionCount,
+                        totalFocusTime
+                    });
+                } else {
+                    // 如果不是Chrome环境，使用localStorage
+                    localStorage.setItem('timeSetting', timeInput.value);
+                    localStorage.setItem('randomAlert', randomAlertToggle.checked);
+                    localStorage.setItem('sessionCount', sessionCount);
+                    localStorage.setItem('totalFocusTime', totalFocusTime);
+                }
+            }
+        });
+    </script>
+</body>
+</html>    
