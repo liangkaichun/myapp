@@ -572,7 +572,8 @@
         }
         
         // 检查是否是M3U8格式
-        if (item.type === 'm3u8') {
+        const regex = /\.m3u8(\?|$)/i;
+        if (regex.test(item.url)) {
           if (Hls.isSupported()) {
             hls = new Hls();
             hls.loadSource(item.url);

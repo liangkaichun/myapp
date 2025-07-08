@@ -1,0 +1,19 @@
+{
+  "name": "Radio FM",
+  "short_name": "RadioFM",
+  "description": "A web-based radio player",
+  "start_url": "/RadioFM.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#e0e8f0",
+  "theme_color": "#4FAAFF",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "158x158",
+      "type": "image/svg+xml"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": []
+}

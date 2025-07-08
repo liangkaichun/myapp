@@ -4,23 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radio FM</title>
-    <link rel="icon" href="data:image/svg+xml,<svg width='158' height='158' xmlns='http://www.w3.org/2000/svg'><g><rect fill='%23D4AF37' stroke='%23000' x='4.5' y='51.25' width='149' height='94' rx='20' stroke-width='5'/><ellipse fill='%23fff' stroke='%23000' stroke-width='5' cx='125.5' cy='80.25' rx='10' ry='10'/><ellipse fill='%23fff' stroke='%23000' stroke-width='5' cx='125.5' cy='115.25' rx='10' ry='10'/><line fill='none' stroke-width='2' x1='124.5' y1='80.25' x2='133.5' y2='71.25' stroke='%23000'/><line fill='none' x1='119.5' y1='107.25' x2='126.5' y2='114.25' stroke-width='2' stroke='%23000'/><line fill='none' stroke-width='5' x1='20.5' y1='51.25' x2='92.5' y2='24.25' stroke='%23000'/><ellipse fill='none' stroke='%23000' stroke-width='5' cx='95' cy='22.75' rx='5' ry='4.5'/><ellipse fill='none' stroke='%23000' cx='95' cy='22.75' rx='10' ry='10'/><line fill='none' stroke-width='5' x1='24.5' y1='99.25' x2='96.50735' y2='99.25' stroke='%23ffffff'/><line fill='none' stroke='%23ffffff' stroke-width='5' x1='36.99835' y1='112.25' x2='84.00899' y2='112.25'/><line fill='none' stroke='%23ffffff' stroke-width='5' x1='36.99835' y1='86.25' x2='84.00899' y2='86.25'/><line fill='none' stroke='%23ffffff' stroke-width='5' x1='47.99368' y1='125.25' x2='73.01367' y2='125.25'/><line fill='none' stroke='%23ffffff' stroke-width='5' x1='47.99368' y1='72.25' x2='73.01367' y2='72.25'/></g></svg>">
-    <link rel="manifest" href="manifest.json">
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .scrollbar-thin {
-                scrollbar-width: thin;
-            }
-            .scrollbar-thumb-rounded {
-                scrollbar-color: rgba(112, 120, 136, 0.5) rgba(160, 168, 184, 0.5);
-            }
-        }
-    </style>
-    <style>
+    <title>TV Player</title>
+    <style type="text/css">
         * {
             margin: 0;
             padding: 0;
@@ -40,7 +25,9 @@
 
         body {
             -webkit-tap-highlight-color: transparent;
+            /* 去除点击高亮 */
             outline: none;
+            /* 去除焦点框 */
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             display: flex;
@@ -62,14 +49,25 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding: 10px;
+            padding: 15px;
+        }
+
+        .radio-top {
+            height: 50px;
+            background: #b0b8c8;
+            border-bottom: 3px solid #9098a8;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin: -15px -15px 15px -15px;
         }
 
         .radio-title {
             color: #404860;
             font-weight: bold;
             text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
-            font-size: 18px;
+            font-size: 20px;
         }
 
         .display {
@@ -77,11 +75,10 @@
             border: 5px solid #707888;
             border-radius: 10px;
             padding: 15px;
-            margin-bottom: 8px;
+            margin-bottom: 15px;
             box-shadow: inset 0 8px 15px rgba(0, 0, 0, 0.2), inset 0 -5px 5px rgba(255, 255, 255, 0.1);
             position: relative;
-            min-height: 90px;
-            height: 100px;
+            min-height: 120px;
         }
 
         .station-name {
@@ -93,20 +90,13 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            cursor: pointer;
-        }
-
-        .status {
-            font-size: 16px;
-            color: #404860;
-            font-style: italic;
         }
 
         .tuner {
             background: #9098a8;
             border-radius: 10px;
             padding: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             box-shadow: inset 0 8px 15px rgba(0, 0, 0, 0.2), inset 0 -5px 5px rgba(255, 255, 255, 0.1);
         }
 
@@ -133,14 +123,14 @@
         .controls {
             display: flex;
             justify-content: center;
-            margin-bottom: 8px;
+            margin-bottom: 15px;
             align-items: center;
-            gap: 8px;
+            gap: 45px;
         }
 
         .control-btn {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             background: #b0b8c8;
             border: none;
@@ -160,28 +150,28 @@
         }
 
         .control-btn svg {
-            width: 30px;
-            height: 30px;
+            width: 45px;
+            height: 45px;
             fill: #404860;
             filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.3));
         }
 
         .btn-play {
-            width: 50px;
-            height: 50px;
-            background: #4FAAFF;
+            width: 70px;
+            height: 70px;
+            background: #a0c0f0;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 3px 3px rgba(255, 255, 255, 0.3), inset 0 -3px 3px rgba(0, 0, 0, 0.3);
         }
 
         .btn-play svg {
-            width: 30px;
-            height: 30px;
+            width: 50px;
+            height: 50px;
             fill: #fff;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
         }
 
         .btn-play:active {
-            transform: translateY(1px);
+            transform: translateY(3px);
             box-shadow: inset 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 -3px 3px rgba(255, 255, 255, 0.1);
         }
 
@@ -189,7 +179,7 @@
             flex: 1;
             background: #b0b8c8;
             border-radius: 10px;
-            padding: 10px;
+            padding: 12px;
             overflow-y: auto;
             box-shadow: inset 0 8px 15px rgba(0, 0, 0, 0.2), inset 0 -5px 5px rgba(255, 255, 255, 0.1);
             display: flex;
@@ -217,12 +207,12 @@
         }
 
         .station-item:active {
-            background: #4FAAFF;
+            background: #b0b8c8;
             transform: translateY(2px);
         }
 
         .station-item.active {
-            background: #4FAAFF;
+            background: #a0c0f0;
             color: #fff;
             border-color: #80a0d0;
         }
@@ -270,14 +260,23 @@
             }
         }
 
+        .controls-panel {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            margin-top: 10px;
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+        }
+
         .panel-btn {
-            padding: 2px;
+            padding: 8px;
             background: #b0b8c8;
             border: none;
             border-radius: 5px;
             color: #404860;
             font-size: 14px;
-            font-weight: bold;
             cursor: pointer;
             text-align: center;
             box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
@@ -285,14 +284,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: calc(15% - 10px);
+            width: calc(25% - 5px);
             min-width: 0;
-            height: 36px;
         }
 
         .panel-btn svg {
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             margin-right: 3px;
             fill: currentColor;
         }
@@ -303,18 +301,12 @@
         }
 
         .panel-btn.active {
-            background: #4FAAFF;
+            background: #a0c0f0;
             color: #fff;
         }
 
-        /* 搜索框样式修改 */
-        .search-container {
-            position: relative;
-            margin-bottom: 10px;
-        }
-
         .search-box {
-            padding: 8px 30px 8px 8px; /* 右侧留出空间给清除图标 */
+            padding: 8px;
             background: #b0b8c8;
             border: 1px solid #a0a8b8;
             border-radius: 5px;
@@ -322,17 +314,7 @@
             font-size: 14px;
             width: 100%;
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-
-        .clear-search {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            display: none;
-            font-size: 20px;
-            color: #707888;
+            margin-bottom: 10px;
         }
 
         .timer-container {
@@ -368,13 +350,13 @@
         .timer-options {
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-around;
+            justify-content: space-between;
             margin-bottom: 15px;
         }
 
         .timer-option {
+            width: 48%;
             margin-bottom: 8px;
-            justify-content: center;
         }
 
         .timer-input {
@@ -396,11 +378,10 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            width: 90px;
         }
 
         .timer-set {
-            background: #4FAAFF;
+            background: #a0c0f0;
             color: #fff;
         }
 
@@ -429,6 +410,7 @@
         }
 
         /* 滚动条样式 */
+
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -446,6 +428,15 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #606878;
         }
+
+        /* 视频样式 */
+        #video-player {
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            max-height: 300px; /* 限定视频最大高度 */
+            object-fit: contain; /* 等比例缩放 */
+        }
     </style>
     <!-- 引入 hls.js 库 -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -453,24 +444,18 @@
 
 <body>
     <div class="radio-container">
+        <div class="radio-top">
+            <div class="radio-title">
+                <span style="text-decoration: none; color: inherit;">TV Player</span>
+            </div>
+        </div>
+
         <div class="display">
             <div class="station-name" id="current-station"></div>
-            <div class="status" id="status"></div>
+            <video id="video-player" preload="none" controls></video>
         </div>
 
         <div class="controls">
-            <button class="panel-btn active" id="btn-show-all">
-                <svg viewBox="0 0 24 24">
-                    <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path>
-                </svg>
-                <span>全部</span>
-            </button>
-            <button class="panel-btn" id="btn-show-favorites">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
-                </svg>
-                <span>收藏</span>
-            </button>
             <button class="control-btn" id="btn-prev">
                 <svg viewBox="0 0 24 24">
                     <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"></path>
@@ -486,33 +471,43 @@
                     <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"></path>
                 </svg>
             </button>
-            <button class="panel-btn" id="btn-timer">
-                <svg viewBox="0 0 24 24">
-                    <path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"></path>
-                </svg>
-                <span>定时</span>
-            </button>
-            <button class="panel-btn" id="btn-open-m3u">
-                <svg viewBox="0 0 24 24">
-                    <path d="M20 6H12L10 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6Z"></path>
-                </svg>
-                <span>打开</span>
-            </button>
         </div>
 
         <div class="station-list-container">
-            <!-- 使用新的搜索容器 -->
-            <div class="search-container">
-                <input type="text" class="search-box" id="search-box" placeholder="搜索...">
-                <span class="clear-search" id="clear-search">&times;</span>
-            </div>
+            <input type="text" class="search-box" id="search-box" placeholder="搜索电台...">
+
             <div class="station-list-wrapper" id="station-list">
 
             </div>
+
+            <div class="controls-panel">
+                <button class="panel-btn" id="btn-show-favorites">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
+                    </svg>
+                    <span>收藏</span>
+                </button>
+                <button class="panel-btn active" id="btn-show-all">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path>
+                    </svg>
+                    <span>全部</span>
+                </button>
+                <button class="panel-btn" id="btn-timer">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"></path>
+                    </svg>
+                    <span>定时</span>
+                </button>
+                <button class="panel-btn" id="btn-open-m3u">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 16v-6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2zm-2 0H7v-6h10v6zm-8-2h2v2h-2v-2zm0-4h2v2h-2v-2z"></path>
+                    </svg>
+                    <span>打开m3u</span>
+                </button>
+            </div>
         </div>
     </div>
-
-    <audio id="audio-player" preload="none"></audio>
 
     <!-- 定时器弹出框 -->
     <div class="timer-container" id="timer-container">
@@ -533,7 +528,7 @@
                 </div>
             </div>
             <div style="margin-bottom: 15px;">
-                <input type="number" class="timer-input" id="custom-time" placeholder="自定义" min="1">
+                <input type="number" class="timer-input" id="custom-time" placeholder="自定义分钟数" min="1">
             </div>
             <div class="timer-buttons">
                 <button class="timer-btn timer-cancel" id="timer-cancel">取消</button>
@@ -546,12 +541,12 @@
     <div class="timer-container" id="m3u-select-container">
         <div class="timer-box">
             <div class="timer-title">选择m3u文件</div>
-            <input type="file" id="m3u-file-input" accept=".m3u,.csv">
+            <input type="file" id="m3u-file-input" accept=".m3u">
             <div style="margin-top: 10px;">
                 <input type="checkbox" id="default-load-checkbox">
-                <label for="default-load-checkbox" style="font-size:14px">启动时加载</label>
+                <label for="default-load-checkbox">默认启动时加载</label>
             </div>
-            <div class="timer-buttons" style="margin-top: 10px;">
+            <div class="timer-buttons">
                 <button class="timer-btn timer-cancel" id="m3u-cancel">取消</button>
                 <button class="timer-btn timer-set" id="m3u-confirm">确认</button>
             </div>
@@ -559,7 +554,7 @@
     </div>
 
     <script>
-        // 内置电台数据
+        // 内置电台数据 (已修正格式)
         let radioData = ["BTV财经伴音,https://wstvcpudali.v.myalicdn.com/wstvcpud/udrmbtv5_1/index.m3u8?adapt=0&BR=audio",
             "BTV生活伴音,https://wstvcpudali.v.myalicdn.com/wstvcpud/udrmbtv7_1/index.m3u8?adapt=0&BR=audio",
             "BTV文艺伴音,https://wstvcpudali.v.myalicdn.com/wstvcpud/udrmbtv2_1/index.m3u8?adapt=0&BR=audio",
@@ -655,11 +650,12 @@
             "上海流行音乐LoveRadio,https://lhttp.qtfm.cn/live/273/64k.mp3",
             "上海新闻广播,https://lhttp.qtfm.cn/live/270/64k.mp3",
             "台北流行音乐广播,http://202.39.43.67:1935/live/RA000080/chunklist.m3u8",
+			"abc,https://fl3.moveonjoy.com/ACC_NETWORK/index.m3u8",
         ].join('\\');
 
         document.addEventListener('DOMContentLoaded', function () {
             // 获取DOM元素
-            const audioPlayer = document.getElementById('audio-player');
+            const videoPlayer = document.getElementById('video-player');
             const btnPlay = document.getElementById('btn-play');
             const playIcon = document.getElementById('play-icon');
             const btnPrev = document.getElementById('btn-prev');
@@ -667,10 +663,8 @@
             const btnTimer = document.getElementById('btn-timer');
             const btnAbout = document.getElementById('btn-about');
             const currentStationDisplay = document.getElementById('current-station');
-            const statusDisplay = document.getElementById('status');
             const stationList = document.getElementById('station-list');
             const searchBox = document.getElementById('search-box');
-            const clearSearch = document.getElementById('clear-search');
             const btnShowFavorites = document.getElementById('btn-show-favorites');
             const btnShowAll = document.getElementById('btn-show-all');
             const timerContainer = document.getElementById('timer-container');
@@ -686,7 +680,7 @@
             const defaultLoadCheckbox = document.getElementById('default-load-checkbox');
 
             // 初始音量
-            audioPlayer.volume = 0.8;
+            videoPlayer.volume = 0.8;
 
             // 电台数据
             let stations = [];
@@ -698,7 +692,7 @@
             // 从本地存储获取收藏和播放次数数据
             let favorites = JSON.parse(localStorage.getItem('radioFavorites')) || [];
             let playCounts = JSON.parse(localStorage.getItem('radioPlayCounts')) || {};
-            let defaultM3uFile = JSON.parse(localStorage.getItem('defaultM3uFile'));
+            let defaultM3uFile = JSON.parse(localStorage.getItem('defaultM3uFile2'));
 
             // 当前显示模式: all, favorites
             let displayMode = 'all';
@@ -798,10 +792,11 @@
 
                 // 更新显示
                 currentStationDisplay.textContent = station.name;
-                statusDisplay.textContent = '正在加载...';
+               // currentFreqDisplay.textContent = 'FM ' + (88.0 + (index % 10) + (index % 10) / 10).toFixed(1);
+               // statusDisplay.textContent = '正在加载...';
 
                 // 停止当前播放
-                audioPlayer.pause();
+                videoPlayer.pause();
                 isPlaying = false;
                 playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
 
@@ -810,61 +805,61 @@
                     hls.destroy();
                 }
 
-                // 设置新的音频源
+                // 设置新的视频源
                 const regex = /\.m3u8(\?|$)/i;
                 if (regex.test(station.url)) {
                     if (Hls.isSupported()) {
                         hls = new Hls();
                         hls.loadSource(station.url);
-                        hls.attachMedia(audioPlayer);
+                        hls.attachMedia(videoPlayer);
                         hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-                            const playPromise = audioPlayer.play();
+                            const playPromise = videoPlayer.play();
                             if (playPromise !== undefined) {
                                 playPromise.then(_ => {
                                     // 播放成功
                                     isPlaying = true;
                                     playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-                                    statusDisplay.textContent = '正在播放';
+                                    //statusDisplay.textContent = '正在播放';
                                 }).catch(error => {
                                     // 播放失败
                                     console.error('播放失败:', error);
-                                    statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
+                                    //statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
                                 });
                             }
                         });
                         hls.on(Hls.Events.ERROR, function (event, data) {
                             console.error('HLS 错误:', data);
-                            statusDisplay.textContent = '播放失败: ' + (data.details || '未知错误');
+                            //statusDisplay.textContent = '播放失败: ' + (data.details || '未知错误');
                         });
-                    } else if (audioPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                        audioPlayer.src = station.url;
-                        const playPromise = audioPlayer.play();
+                    } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+                        videoPlayer.src = station.url;
+                        const playPromise = videoPlayer.play();
                         if (playPromise !== undefined) {
                             playPromise.then(_ => {
                                 // 播放成功
                                 isPlaying = true;
                                 playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-                                statusDisplay.textContent = '正在播放';
+                                //statusDisplay.textContent = '正在播放';
                             }).catch(error => {
                                 // 播放失败
                                 console.error('播放失败:', error);
-                                statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
+                                //statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
                             });
                         }
                     }
                 } else {
-                    audioPlayer.src = station.url;
-                    const playPromise = audioPlayer.play();
+                    videoPlayer.src = station.url;
+                    const playPromise = videoPlayer.play();
                     if (playPromise !== undefined) {
                         playPromise.then(_ => {
                             // 播放成功
                             isPlaying = true;
                             playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-                            statusDisplay.textContent = '正在播放';
+                            //statusDisplay.textContent = '正在播放';
                         }).catch(error => {
                             // 播放失败
                             console.error('播放失败:', error);
-                            statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
+                            //statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
                         });
                     }
                 }
@@ -881,20 +876,20 @@
                 }
 
                 if (isPlaying) {
-                    audioPlayer.pause();
+                    videoPlayer.pause();
                     isPlaying = false;
                     playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-                    statusDisplay.textContent = '已暂停';
+                    //statusDisplay.textContent = '已暂停';
                 } else {
-                    const playPromise = audioPlayer.play();
+                    const playPromise = videoPlayer.play();
                     if (playPromise !== undefined) {
                         playPromise.then(_ => {
                             isPlaying = true;
                             playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-                            statusDisplay.textContent = '正在播放';
+                            //statusDisplay.textContent = '正在播放';
                         }).catch(error => {
-                            console.error('播放失败: ', error);
-                            statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
+                            console.error('播放失败:', error);
+                            //statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
                         });
                     }
                 }
@@ -923,20 +918,7 @@
 
             // 搜索框事件
             searchBox.addEventListener('input', function () {
-                const value = this.value;
-                if (value) {
-                    clearSearch.style.display = 'block';
-                } else {
-                    clearSearch.style.display = 'none';
-                }
-                renderStationList(value);
-            });
-
-            // 清除搜索框内容
-            clearSearch.addEventListener('click', function () {
-                searchBox.value = '';
-                this.style.display = 'none';
-                renderStationList();
+                renderStationList(this.value);
             });
 
             // 显示收藏
@@ -982,14 +964,14 @@
 
                 // 设置新定时器
                 timer = setTimeout(() => {
-                    audioPlayer.pause();
+                    videoPlayer.pause();
                     isPlaying = false;
                     playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-                    statusDisplay.textContent = '定时关闭';
+                    //statusDisplay.textContent = '定时关闭';
                     timer = null;
                 }, minutes * 60 * 1000);
 
-                statusDisplay.textContent = `已设置${minutes}分钟后关闭`;
+                //statusDisplay.textContent = `已设置${minutes}分钟后关闭`;
                 timerContainer.style.display = 'none';
             });
 
@@ -998,7 +980,7 @@
                 if (timer) {
                     clearTimeout(timer);
                 }
-                statusDisplay.textContent = '已取消定时关闭';
+                //statusDisplay.textContent = '已取消定时关闭';
                 timerContainer.style.display = 'none';
             });
 
@@ -1021,49 +1003,32 @@
                         const content = e.target.result;
                         const lines = content.split('\n');
                         let newRadioData = [];
-                        if (file.type == 'text/csv') {
-                            for (let i = 0; i < lines.length; i++) {
-                                const name = lines[i].split(',')[0];
-                                const url = lines[i].split(',')[1];
-                                try {
-                                    new URL(url);
-                                    if (name && url) {
-                                        newRadioData.push(`${name},${url}`);
-                                    }
-                                }
-                                catch (e) {
-                                    continue;
-                                }
-                            }
-                        } else {
-                            for (let i = 0; i < lines.length; i++) {
-                                if (lines[i].startsWith('#EXTINF:')) {
-                                    const name = lines[i].split(',')[1].trim();
-                                    const url = lines[i + 1].trim();
-                                    if (name && url) {
-                                        newRadioData.push(`${name},${url}`);
-                                    }
+                        for (let i = 0; i < lines.length; i++) {
+                            if (lines[i].startsWith('#EXTINF:')) {
+                                const name = lines[i].split(',')[1].trim();
+                                const url = lines[i + 1].trim();
+                                if (name && url) {
+                                    newRadioData.push(`${name},${url}`);
                                 }
                             }
                         }
-
                         radioData = newRadioData.join('\\');
                         stations = parseStations(radioData);
                         currentStationIndex = -1;
                         isPlaying = false;
+                        videoPlayer.pause();
                         playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-                        audioPlayer.pause();
-                        statusDisplay.textContent = '';
+                        //statusDisplay.textContent = '';
                         renderStationList();
 
                         // 保存默认加载文件信息
                         if (defaultLoadCheckbox.checked) {
-                            localStorage.setItem('defaultM3uFile', JSON.stringify({
+                            localStorage.setItem('defaultM3uFile2', JSON.stringify({
                                 name: file.name,
                                 content: content
                             }));
                         } else {
-                            localStorage.removeItem('defaultM3uFile');
+                            localStorage.removeItem('defaultM3uFile2');
                         }
                     };
                     reader.readAsText(file);
@@ -1076,7 +1041,7 @@
 
             // 如果有默认加载的m3u文件，加载它
             if (defaultM3uFile) {
-                defaultLoadCheckbox.checked = true;
+				defaultLoadCheckbox.checked=true;
                 const lines = defaultM3uFile.content.split('\n');
                 let newRadioData = [];
                 for (let i = 0; i < lines.length; i++) {
@@ -1092,10 +1057,15 @@
                 stations = parseStations(radioData);
                 currentStationIndex = -1;
                 isPlaying = false;
+                videoPlayer.pause();
                 playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-                audioPlayer.pause();
-                statusDisplay.textContent = '';
+                //statusDisplay.textContent = '';
                 renderStationList();
+            }
+
+            // 如果有电台，默认选择第一个
+            if (stations.length > 0) {
+                //selectStation(0);
             }
 
             // 初始渲染
@@ -1114,38 +1084,12 @@
             });
 
             // 音频错误处理
-            audioPlayer.addEventListener('error', function () {
-                statusDisplay.textContent = '播放错误: 无法加载音频';
+            videoPlayer.addEventListener('error', function () {
+                //statusDisplay.textContent = '播放错误: 无法加载音频';
                 isPlaying = false;
                 playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
                 renderStationList(searchBox.value);
             });
-
-            // 滚动到当前播放电台
-            currentStationDisplay.addEventListener('click', function () {
-                if (currentStationIndex !== -1) {
-                    const activeStation = stationList.querySelector('.station-item.active');
-                    if (activeStation) {
-                        activeStation.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center'
-                        });
-                    }
-                }
-            });
-
-            // 注册Service Worker
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/service-worker.js')
-                        .then(registration => {
-                            console.log('ServiceWorker registered with scope:', registration.scope);
-                        })
-                        .catch(error => {
-                            console.log('ServiceWorker registration failed:', error);
-                        });
-                });
-            }
         });
     </script>
 </body>
