@@ -1,8 +1,8 @@
 const CACHE_NAME = 'radio-fm-cache-v1';
 const ASSETS_TO_CACHE = [
-    '/myapp/RadioFM.html',
-    '/myapp/manifest.json',
-    '/myapp/logo.svg'
+    './RadioFM.html',
+    './manifest.json',
+    './logo.svg'
 ];
 
 // 安装阶段：缓存核心资源
