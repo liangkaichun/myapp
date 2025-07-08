@@ -1,6 +1,5 @@
 {
   "name": "Radio FM",
-  "id": "/myapp/RadioFM.html",
   "short_name": "RadioFM",
   "description": "A web-based radio player",
   "start_url": "/myapp/RadioFM.html",
