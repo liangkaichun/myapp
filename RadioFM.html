@@ -1029,12 +1029,12 @@
                 let newRadioData = [];
                 
                 // 处理CSV格式
-                if (m3uFileInput.files[0]?.type === 'text/csv' && !isOnline) {
+                if (!isOnline && m3uFileInput.files[0].type == 'text/csv') {
                     for (let i = 0; i < lines.length; i++) {
                         const parts = lines[i].split(',');
                         if (parts.length >= 2) {
-                            const name = parts[0].trim();
-                            const url = parts[1].trim();
+                            const name = lines[i].split(',')[0];
+                            const url = lines[i].split(',')[1];
                             try {
                                 new URL(url);
                                 if (name && url) {
@@ -1082,7 +1082,7 @@
                 if (shouldDefaultLoad) {
                     const defaultConfig = {
                         type: isOnline ? 'url' : 'file',
-                        value: isOnline ? url : content // 对于文件，我们保存内容而不是路径（浏览器安全限制）
+                        value: isOnline ? url : radioData // 对于文件，我们保存内容而不是路径（浏览器安全限制）
                     };
                     localStorage.setItem('defaultM3uFile', JSON.stringify(defaultConfig));
                 } else if (defaultM3uFile) {
@@ -1195,8 +1195,8 @@
                 
                 m3uSelectContainer.style.display = 'none';
                 // 重置输入
-                m3uFileInput.value = '';
-                m3uUrlInput.value = '';
+                //m3uFileInput.value = '';
+                //m3uUrlInput.value = '';
             });
 
             // 搜索功能
@@ -1242,7 +1242,12 @@
                 if (defaultM3uFile.type === 'url') {
                     loadOnlineM3U(defaultM3uFile.value, true);
                 } else if (defaultM3uFile.type === 'file' && defaultM3uFile.value) {
-                    processM3UContent(defaultM3uFile.value, true);
+                    //processM3UContent(defaultM3uFile.value, true);
+					newRadioData=defaultM3uFile.value;
+                    stations = parseStations(newRadioData);
+                    currentStationIndex = -1;
+                    renderStationList();
+                    statusElement.textContent = `已加载 ${stations.length} 个电台`;
                 }
             } else {
                 // 解析内置电台数据
