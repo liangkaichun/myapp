@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL重定向测试工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        neutral: '#1F2937',
+                        danger: '#EF4444',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-custom {
+                transition: all 0.3s ease;
+            }
+            .shadow-custom {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 页面标题 -->
+        <header class="text-center mb-10">
+            <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-neutral mb-2">
+                <i class="fa fa-link text-primary mr-3"></i>URL重定向测试工具
+            </h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                输入一个可能包含重定向的URL，获取其最终指向的地址。支持跟踪多次重定向，最多可跟踪10次以避免无限循环。
+            </p>
+        </header>
+        
+        <!-- 主内容区 -->
+        <main class="bg-white rounded-xl shadow-custom p-6 md:p-8 mb-8">
+            <!-- 输入表单 -->
+            <form id="urlForm" class="mb-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1">
+                        <label for="urlInput" class="block text-sm font-medium text-gray-700 mb-1">
+                            请输入URL:
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                                <i class="fa fa-globe"></i>
+                            </span>
+                            <input 
+                                type="url" 
+                                id="urlInput" 
+                                placeholder="例如: https://example.com/redirect" 
+                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-custom"
+                                required
+                            >
+                        </div>
+                    </div>
+                    <div class="flex items-end">
+                        <button 
+                            type="submit" 
+                            id="testButton"
+                            class="bg-primary hover:bg-primary/90 text-white font-medium px-6 py-3 rounded-lg transition-custom flex items-center gap-2"
+                        >
+                            <i class="fa fa-search"></i>
+                            <span>测试重定向</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <label for="maxRedirects" class="block text-sm font-medium text-gray-700 mb-1">
+                        最大重定向次数:
+                    </label>
+                    <input 
+                        type="number" 
+                        id="maxRedirects" 
+                        min="1" 
+                        max="20" 
+                        value="10"
+                        class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-custom"
+                    >
+                </div>
+            </form>
+            
+            <!-- 加载状态 -->
+            <div id="loadingIndicator" class="hidden flex items-center justify-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                <p class="ml-4 text-gray-600">正在跟踪重定向...</p>
+            </div>
+            
+            <!-- 结果展示区 -->
+            <div id="resultContainer" class="hidden">
+                <div class="border-t border-gray-200 pt-6">
+                    <h2 class="text-xl font-semibold text-neutral mb-4 flex items-center">
+                        <i class="fa fa-result text-primary mr-2"></i>测试结果
+                    </h2>
+                    
+                    <div id="successResult" class="hidden">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <p class="text-green-800 font-medium flex items-center">
+                                <i class="fa fa-check-circle text-secondary mr-2"></i>
+                                成功获取最终地址
+                            </p>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500 mb-1">初始URL:</h3>
+                                <p id="initialUrlDisplay" class="bg-gray-50 p-3 rounded-lg break-all"></p>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500 mb-1">最终URL:</h3>
+                                <p id="finalUrlDisplay" class="bg-gray-50 p-3 rounded-lg break-all font-medium text-primary"></p>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500 mb-1">重定向路径:</h3>
+                                <div id="redirectPath" class="bg-gray-50 p-3 rounded-lg space-y-2 max-h-60 overflow-y-auto"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="errorResult" class="hidden">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <p id="errorMessage" class="text-red-800 font-medium flex items-center">
+                                <i class="fa fa-exclamation-circle text-danger mr-2"></i>
+                                错误信息
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- 信息提示区 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+            <h3 class="font-medium mb-1 flex items-center">
+                <i class="fa fa-info-circle mr-2"></i>注意事项
+            </h3>
+            <ul class="list-disc pl-5 space-y-1">
+                <li>由于浏览器的跨域安全限制，部分URL可能无法测试</li>
+                <li>测试结果可能受目标服务器设置和网络环境影响</li>
+                <li>如果测试失败，可以尝试将URL复制到新窗口打开查看</li>
+            </ul>
+        </div>
+        
+        <!-- 页脚 -->
+        <footer class="mt-10 text-center text-gray-500 text-sm">
+            <p>URL重定向测试工具 &copy; 2023</p>
+        </footer>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const urlForm = document.getElementById('urlForm');
+        const urlInput = document.getElementById('urlInput');
+        const maxRedirectsInput = document.getElementById('maxRedirects');
+        const testButton = document.getElementById('testButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultContainer = document.getElementById('resultContainer');
+        const successResult = document.getElementById('successResult');
+        const errorResult = document.getElementById('errorResult');
+        const errorMessage = document.getElementById('errorMessage');
+        const initialUrlDisplay = document.getElementById('initialUrlDisplay');
+        const finalUrlDisplay = document.getElementById('finalUrlDisplay');
+        const redirectPath = document.getElementById('redirectPath');
+        
+        // 存储重定向路径的数组
+        let redirectHistory = [];
+        
+        // 获取URL重定向后的最终地址
+        async function getFinalRedirectUrl(initialUrl, maxRedirects = 10) {
+            // 重置重定向历史
+            redirectHistory = [initialUrl];
+            
+            // 防止无限重定向，设置最大重定向次数
+            if (maxRedirects <= 0) {
+                throw new Error('达到最大重定向次数，可能存在循环重定向');
+            }
+
+            try {
+                // 发送HEAD请求（比GET更轻量）
+                const response = await fetch(initialUrl, {
+                    method: 'HEAD',
+                    redirect: 'manual', // 手动处理重定向
+                    mode: 'cors',       // 处理跨域请求
+                    cache: 'no-store'   // 不使用缓存
+                });
+
+                // 检查是否有重定向状态码（3xx）
+                if (response.status >= 300 && response.status < 400) {
+                    // 获取重定向的目标URL
+                    const redirectUrl = response.headers.get('Location');
+                    
+                    // 如果没有Location头，说明没有重定向信息
+                    if (!redirectUrl) {
+                        return initialUrl;
+                    }
+                    
+                    // 处理相对URL
+                    const absoluteRedirectUrl = new URL(redirectUrl, initialUrl).href;
+                    
+                    // 添加到重定向历史
+                    redirectHistory.push(absoluteRedirectUrl);
+                    
+                    // 如果和初始URL相同，说明可能存在循环重定向
+                    if (absoluteRedirectUrl === initialUrl) {
+                        throw new Error('检测到循环重定向');
+                    }
+                    
+                    // 递归获取最终URL，减少剩余重定向次数
+                    return getFinalRedirectUrl(absoluteRedirectUrl, maxRedirects - 1);
+                } else {
+                    // 没有重定向，当前URL就是最终地址
+                    return initialUrl;
+                }
+            } catch (error) {
+                // 如果是CORS错误，尝试使用GET方法再试一次
+                if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+                    try {
+                        const response = await fetch(initialUrl, {
+                            method: 'GET',
+                            redirect: 'manual',
+                            mode: 'cors',
+                            cache: 'no-store'
+                        });
+                        
+                        if (response.status >= 300 && response.status < 400) {
+                            const redirectUrl = response.headers.get('Location');
+                            if (redirectUrl) {
+                                const absoluteRedirectUrl = new URL(redirectUrl, initialUrl).href;
+                                redirectHistory.push(absoluteRedirectUrl);
+                                return getFinalRedirectUrl(absoluteRedirectUrl, maxRedirects - 1);
+                            }
+                        }
+                        return initialUrl;
+                    } catch (getError) {
+                        throw new Error(`获取最终URL失败: ${getError.message}（已尝试HEAD和GET方法）`);
+                    }
+                }
+                
+                throw new Error(`获取最终URL失败: ${error.message}`);
+            }
+        }
+        
+        // 显示结果
+        function displayResults(initialUrl, finalUrl) {
+            initialUrlDisplay.textContent = initialUrl;
+            finalUrlDisplay.textContent = finalUrl;
+            
+            // 清空之前的路径
+            redirectPath.innerHTML = '';
+            
+            // 显示重定向路径
+            redirectHistory.forEach((url, index) => {
+                const pathItem = document.createElement('div');
+                pathItem.className = `flex items-start`;
+                
+                // 添加序号
+                const indexSpan = document.createElement('span');
+                indexSpan.className = `inline-block w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center mr-2 mt-0.5 flex-shrink-0`;
+                indexSpan.textContent = index + 1;
+                
+                // 添加URL
+                const urlSpan = document.createElement('span');
+                urlSpan.className = 'flex-1 break-all';
+                urlSpan.textContent = url;
+                
+                // 添加箭头（最后一个没有箭头）
+                if (index < redirectHistory.length - 1) {
+                    const arrowDiv = document.createElement('div');
+                    arrowDiv.className = 'text-gray-400 mx-2 self-center';
+                    arrowDiv.innerHTML = '<i class="fa fa-long-arrow-down"></i>';
+                    
+                    pathItem.appendChild(indexSpan);
+                    pathItem.appendChild(urlSpan);
+                    pathItem.appendChild(arrowDiv);
+                } else {
+                    pathItem.appendChild(indexSpan);
+                    pathItem.appendChild(urlSpan);
+                }
+                
+                redirectPath.appendChild(pathItem);
+            });
+            
+            // 显示结果
+            successResult.classList.remove('hidden');
+            errorResult.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+        }
+        
+        // 显示错误信息
+        function displayError(message) {
+            errorMessage.innerHTML = `<i class="fa fa-exclamation-circle text-danger mr-2"></i>${message}`;
+            successResult.classList.add('hidden');
+            errorResult.classList.remove('hidden');
+            resultContainer.classList.remove('hidden');
+        }
+        
+        // 表单提交处理
+        urlForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = urlInput.value.trim();
+            const maxRedirects = parseInt(maxRedirectsInput.value, 10) || 10;
+            
+            // 显示加载状态
+            loadingIndicator.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            
+            try {
+                // 测试URL
+                const finalUrl = await getFinalRedirectUrl(url, maxRedirects);
+                
+                // 显示结果
+                displayResults(url, finalUrl);
+            } catch (error) {
+                // 显示错误
+                displayError(error.message);
+                
+                // 在控制台显示详细错误信息
+                console.error('测试重定向时出错:', error);
+            } finally {
+                // 隐藏加载状态
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+        
+        // 为输入框添加示例URL
+        urlInput.addEventListener('focus', () => {
+            if (!urlInput.value) {
+                urlInput.placeholder = '例如: https://tinyurl.com/example 或 https://bit.ly/test';
+            }
+        });
+        
+        // 为按钮添加悬停效果
+        testButton.addEventListener('mouseenter', () => {
+            testButton.classList.add('transform', 'translate-y-[-2px]');
+        });
+        
+        testButton.addEventListener('mouseleave', () => {
+            testButton.classList.remove('transform', 'translate-y-[-2px]');
+        });
+    </script>
+</body>
+</html>
