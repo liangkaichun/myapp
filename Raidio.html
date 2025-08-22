@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio FM</title>
+    <link rel="stylesheet" href="./RadioFM.css">
+</head>
+<body>
+    <div class="radio-container">
+        <div class="radio-top">
+            <div class="radio-title">
+                <span style="text-decoration: none; color: inherit;">Radio FM</span>
+            </div>
+        </div>
+        
+        <div class="display">
+            <div class="station-name" id="current-station"></div>
+            <div class="station-freq" id="current-freq"></div>
+            <div class="status" id="status"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="btn-prev">
+                <svg viewBox="0 0 24 24">
+                    <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"></path>
+                </svg>
+            </button>
+            <button class="control-btn btn-play" id="btn-play">
+                <svg viewBox="0 0 24 24" id="play-icon">
+                    <path d="M8 5v14l11-7z"></path>
+                </svg>
+            </button>
+            <button class="control-btn" id="btn-next">
+                <svg viewBox="0 0 24 24">
+                    <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="station-list-container">
+            <input type="text" class="search-box" id="search-box" placeholder="搜索电台...">
+            
+            <div class="station-list-wrapper" id="station-list">
+            
+            </div>
+            
+            <div class="controls-panel">
+                <button class="panel-btn" id="btn-show-favorites">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
+                    </svg>
+                    <span>收藏</span>
+                </button>
+                <button class="panel-btn active" id="btn-show-all">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path>
+                    </svg>
+                    <span>全部</span>
+                </button>
+                <button class="panel-btn" id="btn-timer">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"></path>
+                    </svg>
+                    <span>定时</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <audio id="audio-player" preload="none"></audio>
+    
+    <!-- 定时器弹出框 -->
+    <div class="timer-container" id="timer-container">
+        <div class="timer-box">
+            <div class="timer-title">定时关闭</div>
+            <div class="timer-options">
+                <div class="timer-option">
+                    <button class="timer-btn timer-option-btn" data-minutes="30">30分钟</button>
+                </div>
+                <div class="timer-option">
+                    <button class="timer-btn timer-option-btn" data-minutes="60">60分钟</button>
+                </div>
+                <div class="timer-option">
+                    <button class="timer-btn timer-option-btn" data-minutes="90">90分钟</button>
+                </div>
+                <div class="timer-option">
+                    <button class="timer-btn timer-option-btn" data-minutes="120">120分钟</button>
+                </div>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <input type="number" class="timer-input" id="custom-time" placeholder="自定义分钟数" min="1">
+            </div>
+            <div class="timer-buttons">
+                <button class="timer-btn timer-cancel" id="timer-cancel">取消</button>
+                <button class="timer-btn timer-set" id="timer-set">设置</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const audioPlayer = document.getElementById('audio-player');
+            const btnPlay = document.getElementById('btn-play');
+            const playIcon = document.getElementById('play-icon');
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const btnTimer = document.getElementById('btn-timer');
+            const btnAbout = document.getElementById('btn-about');
+            const currentStationDisplay = document.getElementById('current-station');
+            const currentFreqDisplay = document.getElementById('current-freq');
+            const statusDisplay = document.getElementById('status');
+            const stationList = document.getElementById('station-list');
+            const searchBox = document.getElementById('search-box');
+            const btnShowFavorites = document.getElementById('btn-show-favorites');
+            const btnShowAll = document.getElementById('btn-show-all');
+            const timerContainer = document.getElementById('timer-container');
+            const timerOptionBtns = document.querySelectorAll('.timer-option-btn');
+            const customTimeInput = document.getElementById('custom-time');
+            const timerSetBtn = document.getElementById('timer-set');
+            const timerCancelBtn = document.getElementById('timer-cancel');
+
+            // 初始音量
+            audioPlayer.volume = 0.8;
+
+            // 电台数据
+            let stations = [];
+            let currentStationIndex = -1;
+            let isPlaying = false;
+            let timer = null;
+
+            // 从本地存储获取收藏和播放次数数据
+            let favorites = JSON.parse(localStorage.getItem('radioFavorites')) || [];
+            let playCounts = JSON.parse(localStorage.getItem('radioPlayCounts')) || {};
+
+            // 当前显示模式: all, favorites
+            let displayMode = 'all';
+
+            // 解析电台数据
+            function parseStations(data) {
+                const lines = data.split('\n');
+                const stations = [];
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith('#EXTINF')) {
+                        const nameMatch = lines[i].match(/,(.*)$/);
+                        if (nameMatch) {
+                            const name = nameMatch[1].trim();
+                            const url = lines[i + 1].trim();
+                            if (url) {
+                                stations.push({
+                                    name: name,
+                                    url: url,
+                                    id: name.toLowerCase().replace(/\s+/g, '-')
+                                });
+                            }
+                        }
+                    }
+                }
+                return stations;
+            }
+
+            // 渲染电台列表
+            function renderStationList(filter = '') {
+                stationList.innerHTML = '';
+                let filteredStations = stations;
+
+                // 根据显示模式过滤
+                if (displayMode === 'favorites') {
+                    filteredStations = stations.filter(station => favorites.includes(station.id));
+                }
+
+                // 应用搜索过滤
+                if (filter) {
+                    const lowerFilter = filter.toLowerCase();
+                    filteredStations = filteredStations.filter(station =>
+                        station.name.toLowerCase().includes(lowerFilter));
+                }
+
+                filteredStations.forEach((station, index) => {
+                    if (!station) return;
+                    const originalIndex = stations.findIndex(s => s.id === station.id);
+                    const isActive = originalIndex === currentStationIndex;
+                    const isFavorite = favorites.includes(station.id);
+
+                    const stationItem = document.createElement('div');
+                    stationItem.className = 'station-item';
+                    if (isActive) {
+                        stationItem.classList.add('active');
+                    }
+
+                    stationItem.innerHTML = `<div class="station-item-name">${station.name}</div>
+                                            <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" 
+                                                    data-id="${station.id}">${isFavorite ? '★' : '☆'}</button>
+                                            ${isActive && isPlaying ? '<div class="station-item-playing"></div>' : ''}`;
+
+                    stationItem.addEventListener('click', () => {
+                        selectStation(originalIndex);
+                    });
+
+                    stationList.appendChild(stationItem);
+                });
+
+                // 添加收藏按钮事件
+                document.querySelectorAll('.favorite-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const stationId = this.getAttribute('data-id');
+                        toggleFavorite(stationId);
+                    });
+                });
+            }
+
+            // 切换收藏状态
+            function toggleFavorite(stationId) {
+                const index = favorites.indexOf(stationId);
+                if (index === -1) {
+                    favorites.push(stationId);
+                } else {
+                    favorites.splice(index, 1);
+                }
+                localStorage.setItem('radioFavorites', JSON.stringify(favorites));
+                renderStationList(searchBox.value);
+            }
+
+            // 增加播放次数
+            function incrementPlayCount(stationId) {
+                playCounts[stationId] = (playCounts[stationId] || 0) + 1;
+                localStorage.setItem('radioPlayCounts', JSON.stringify(playCounts));
+            }
+
+            // 选择电台
+            function selectStation(index) {
+                if (index < 0 || index >= stations.length) return;
+                currentStationIndex = index;
+                const station = stations[index];
+
+                // 更新播放次数
+                incrementPlayCount(station.id);
+
+                // 更新显示
+                currentStationDisplay.textContent = station.name;
+                currentFreqDisplay.textContent = 'FM ' + (88.0 + (index % 10) + (index % 10) / 10).toFixed(1);
+                statusDisplay.textContent = '正在加载...';
+
+                // 停止当前播放
+                audioPlayer.pause();
+                isPlaying = false;
+                playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+
+                // 设置新的音频源
+                audioPlayer.src = station.url;
+
+                // 尝试播放
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        // 播放成功
+                        isPlaying = true;
+                        playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                        statusDisplay.textContent = '正在播放';
+                    }).catch(error => {
+                        // 播放失败
+                        console.error('播放失败:', error);
+                        statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
+                    });
+                }
+
+                // 重新渲染列表以更新活动状态
+                renderStationList(searchBox.value);
+            }
+
+            // 播放/暂停
+            btnPlay.addEventListener('click', function() {
+                if (currentStationIndex === -1 && stations.length > 0) {
+                    selectStation(0);
+                    return;
+                }
+
+                if (isPlaying) {
+                    audioPlayer.pause();
+                    isPlaying = false;
+                    playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                    statusDisplay.textContent = '已暂停';
+                } else {
+                    const playPromise = audioPlayer.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(_ => {
+                            isPlaying = true;
+                            playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                            statusDisplay.textContent = '正在播放';
+                        }).catch(error => {
+                            console.error('播放失败:', error);
+                            statusDisplay.textContent = '播放失败: ' + (error.message || '未知错误');
+                        });
+                    }
+                }
+                renderStationList(searchBox.value);
+            });
+
+            // 上一首
+            btnPrev.addEventListener('click', function() {
+                if (stations.length === 0) return;
+                let newIndex = currentStationIndex - 1;
+                if (newIndex < 0) {
+                    newIndex = stations.length - 1;
+                }
+                selectStation(newIndex);
+            });
+
+            // 下一首
+            btnNext.addEventListener('click', function() {
+                if (stations.length === 0) return;
+                let newIndex = currentStationIndex + 1;
+                if (newIndex >= stations.length) {
+                    newIndex = 0;
+                }
+                selectStation(newIndex);
+            });
+
+            // 搜索框事件
+            searchBox.addEventListener('input', function() {
+                renderStationList(this.value);
+            });
+
+            // 显示收藏
+            btnShowFavorites.addEventListener('click', function() {
+                displayMode = 'favorites';
+                btnShowFavorites.classList.add('active');
+                btnShowAll.classList.remove('active');
+                renderStationList(searchBox.value);
+            });
+
+            // 显示全部
+            btnShowAll.addEventListener('click', function() {
+                displayMode = 'all';
+                btnShowFavorites.classList.remove('active');
+                btnShowAll.classList.add('active');
+                renderStationList(searchBox.value);
+            });
+
+            // 定时器按钮
+            btnTimer.addEventListener('click', function() {
+                timerContainer.style.display = 'flex';
+            });
+
+            // 定时选项按钮
+            timerOptionBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    customTimeInput.value = this.getAttribute('data-minutes');
+                });
+            });
+
+            // 设置定时器
+            timerSetBtn.addEventListener('click', function() {
+                const minutes = parseInt(customTimeInput.value);
+                if (isNaN(minutes)) {
+                    alert('请输入有效的分钟数');
+                    return;
+                }
+
+                // 清除现有定时器
+                if (timer) {
+                    clearTimeout(timer);
+                }
+
+                // 设置新定时器
+                timer = setTimeout(() => {
+                    audioPlayer.pause();
+                    isPlaying = false;
+                    playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                    statusDisplay.textContent = '定时关闭';
+                    timer = null;
+                }, minutes * 60 * 1000);
+
+                statusDisplay.textContent = `已设置${minutes}分钟后关闭`;
+                timerContainer.style.display = 'none';
+            });
+
+            // 取消定时器
+            timerCancelBtn.addEventListener('click', function() {
+                if (timer) {
+                    clearTimeout(timer);
+                }
+                statusDisplay.textContent = '已取消定时关闭';
+                timerContainer.style.display = 'none';
+            });
+
+            // 从文件中读取电台数据
+            fetch('./qingtingFM.json')
+               .then(response => response.text())
+               .then(data => {
+                    stations = parseStations(data);
+                    // 如果有电台，默认选择第一个
+                    if (stations.length > 0) {
+                        //selectStation(0);
+                    }
+                    // 初始渲染
+                    renderStationList();
+                })
+               .catch(error => {
+                    console.error('读取文件失败:', error);
+                    statusDisplay.textContent = '读取电台数据失败: ' + (error.message || '未知错误');
+                });
+
+            // 键盘快捷键
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    btnPlay.click();
+                } else if (e.code === 'ArrowLeft') {
+                    btnPrev.click();
+                } else if (e.code === 'ArrowRight') {
+                    btnNext.click();
+                }
+            });
+
+            // 音频错误处理
+            audioPlayer.addEventListener('error', function() {
+                statusDisplay.textContent = '播放错误: 无法加载音频';
+                isPlaying = false;
+                playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                renderStationList(searchBox.value);
+            });
+        });
+    </script>
+</body>
+</html>
