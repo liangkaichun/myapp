@@ -573,11 +573,11 @@
             <div class="timer-title" style="margin-top:10px">添加网络电台</div>
 			<div style="margin-top: 10px;">
 				<span style="font-size:14px">名称：</span>
-				<input type="text" id="m3u-name-input" style="width:200px">
+				<input type="text" id="m3u-name-input" style="width:200px" maxlength="40">
 			</div>
 			<div style="margin-top: 10px;">
 				<span style="font-size:14px">链接：</span>
-            	<input type="text" id="m3u-url-input" style="width:200px">
+            	<input type="text" id="m3u-url-input" style="width:200px" maxlength="200">
 			</div>
             <div class="timer-buttons" style="margin-top: 10px;">
                 <button class="timer-btn timer-cancel" id="url-cancel">取消</button>
@@ -884,6 +884,10 @@
             // 选择电台
             function selectStation(index) {
                 if (index < 0 || index >= stations.length) return;
+				const display = document.getElementsByClassName("display");
+				if(display.length > 0){
+					display[0].style.background = "#95ff62";
+				}
                 currentStationIndex = index;
                 const station = stations[index];
 
