@@ -49,8 +49,8 @@
             height: 100%;
             width: 100%;
             overflow: hidden;
-            background: #e0e8f0;
-            background-image: linear-gradient(to bottom, #f0f8ff, #d0d8e8);
+            background: #e8f2ff;
+            background-image: linear-gradient(to bottom, #e8f2ff, #d0d8e8);
         }
 
         body {
@@ -570,12 +570,45 @@
                 <button class="timer-btn timer-cancel" id="m3u-cancel">取消</button>
                 <button class="timer-btn timer-set" id="m3u-confirm">确认</button>
             </div>
+            <div class="timer-title" style="margin-top:10px">添加网络电台</div>
+			<div style="margin-top: 10px;">
+				<span style="font-size:14px">名称：</span>
+				<input type="text" id="m3u-name-input" style="width:200px">
+			</div>
+			<div style="margin-top: 10px;">
+				<span style="font-size:14px">链接：</span>
+            	<input type="text" id="m3u-url-input" style="width:200px">
+			</div>
+            <div class="timer-buttons" style="margin-top: 10px;">
+                <button class="timer-btn timer-cancel" id="url-cancel">取消</button>
+                <button class="timer-btn timer-set" id="url-confirm">确认</button>
+            </div>
         </div>
     </div>
 
     <script>
         // 内置电台数据
-        let radioData = ["CCTV1综合,https://piccpndali.v.myalicdn.com/audio/cctv1_2.m3u8",
+        let radioData = ["央广中国之声,http://iovliveplay.radio.cn/fm/1600000000510h.m3u8",
+"央广经济之声,http://iovliveplay.radio.cn/fm/1600000000514h.m3u8",
+"央广音乐之声,http://iovliveplay.radio.cn/fm/1600000000512h.m3u8",
+"央广经典音乐广播,http://iovliveplay.radio.cn/fm/1600000000716h.m3u8",
+"央广台海之声,http://iovliveplay.radio.cn/fm/1600000002278h.m3u8",
+"央广神州之声,http://iovliveplay.radio.cn/fm/1600000000326h.m3u8",
+"大湾区之声,http://iovliveplay.radio.cn/fm/1600000000484h.m3u8",
+"央广民族之声,http://iovliveplay.radio.cn/fm/1600000000515h.m3u8",
+"央广文艺之声,http://iovliveplay.radio.cn/fm/1600000000327h.m3u8",
+"央广阅读之声,http://iovliveplay.radio.cn/fm/1600000000606h.m3u8",
+"央广香港之声,http://iovliveplay.radio.cn/fm/1600000000328h.m3u8",
+"央广中国交通广播,http://iovliveplay.radio.cn/fm/1600000000323h.m3u8",
+"央广乡村广播,http://iovliveplay.radio.cn/fm/1600000002551h.m3u8",
+"环球资讯,https://sk.cri.cn/905.m3u8",
+"南海之声,https://sk.cri.cn/nhzs.m3u8",
+"轻松调频,https://sk.cri.cn/915.m3u8",
+"Hit FM,https://sk.cri.cn/887.m3u8",
+"CGTN,https://sk.cri.cn/am846.m3u8",
+"世界华声华语环球方言广播,https://sk.cri.cn/hxfh.m3u8",
+"华语环球广播,https://sk.cri.cn/hyhq.m3u8",
+"CCTV1综合,https://piccpndali.v.myalicdn.com/audio/cctv1_2.m3u8",
 "CCTV2财经,https://piccpndali.v.myalicdn.com/audio/cctv2_2.m3u8",
 "CCTV3综艺,https://piccpndali.v.myalicdn.com/audio/cctv3_2.m3u8",
 "CCTV4国际,https://piccpndali.v.myalicdn.com/audio/cctv4_2.m3u8",
@@ -591,14 +624,10 @@
 "CCTV11戏曲,https://piccpndali.v.myalicdn.com/audio/cctv11_2.m3u8",
 "CCTV12社会与法,https://piccpndali.v.myalicdn.com/audio/cctv12_2.m3u8",
 "CCTV13新闻,https://piccpndali.v.myalicdn.com/audio/cctv13_2.m3u8",
-"CCTV14少儿,https://piccpndks.v.kcdnvip.com/audio/cctv14_2/index.m3u8",
-"CCTV-14少儿,https://piccpndali.v.myalicdn.com/audio/cctv14_2.m3u8",
-"CCTV15音乐,https://piccpndks.v.kcdnvip.com/audio/cctv15_2/index.m3u8",
-"CCTV-15音乐,https://piccpndali.v.myalicdn.com/audio/cctv15_2.m3u8",
-"CCTV16奥林匹克,https://piccpndks.v.kcdnvip.com/audio/cctv16_2/index.m3u8",
-"CCTV-16奥林匹克,https://piccpndali.v.myalicdn.com/audio/cctv16_2.m3u8",
-"CCTV17农业农村,https://piccpndks.v.kcdnvip.com/audio/cctv17_2/index.m3u8",
-"CCTV-17农业农村,https://piccpndali.v.myalicdn.com/audio/cctv17_2.m3u8",
+"CCTV14少儿,https://piccpndali.v.myalicdn.com/audio/cctv14_2.m3u8",
+"CCTV15音乐,https://piccpndali.v.myalicdn.com/audio/cctv15_2.m3u8",
+"CCTV16奥林匹克,https://piccpndali.v.myalicdn.com/audio/cctv16_2.m3u8",
+"CCTV17农业农村,https://piccpndali.v.myalicdn.com/audio/cctv17_2.m3u8",
 "CETV1,https://piccpndali.v.myalicdn.com/audio/cetv1_2.m3u8",
 "CETV2,https://piccpndali.v.myalicdn.com/audio/cetv2_2.m3u8",
 "CETV3,https://piccpndali.v.myalicdn.com/audio/cetv3_2.m3u8",
@@ -655,28 +684,39 @@
 "钱江都市伴音,https://ali-vl.cztv.com/channels/lantian/channel002/360p.m3u8",
 "之江纪录伴音,https://ali-vl.cztv.com/channels/lantian/channel012/360p.m3u8",
 "厦门卫视伴音,https://xiamenalic.v.myalicdn.com/xiamen/xiamen_1/index.m3u8",
-"CNR中国之声,https://satellitepull.cnr.cn/live/wxzgzs/playlist.m3u8",
-"CNR经济之声,https://satellitepull.cnr.cn/live/wxjjzs/playlist.m3u8",
-"CNR音乐之声,https://satellitepull.cnr.cn/live/wxyyzs/playlist.m3u8",
-"CNR经典音乐广播,https://satellitepull.cnr.cn/live/wxdszs/playlist.m3u8",
-"CNR台海之声,https://satellitepull.cnr.cn/live/wxzhzs/playlist.m3u8",
-"CNR神州之声,https://satellitepull.cnr.cn/live/wxszzs/playlist.m3u8",
-"CNR大湾区之声,https://satellitepull.cnr.cn/live/wxhxzs/playlist.m3u8",
-"CNR民族之声,https://satellitepull.cnr.cn/live/wxmzzs/playlist.m3u8",
-"CNR文艺之声,https://satellitepull.cnr.cn/live/wxwyzs/playlist.m3u8",
-"CNR老年之声,https://satellitepull.cnr.cn/live/wxlnzs/playlist.m3u8",
-"CNR藏语广播,https://satellitepull.cnr.cn/live/wxzygb/playlist.m3u8",
-"CNR阅读之声,https://satellitepull.cnr.cn/live/wxylgb/playlist.m3u8",
-"CNR维语广播,https://satellitepull.cnr.cn/live/wxwygb/playlist.m3u8",
-"CNR香港之声,https://satellitepull.cnr.cn/live/wxxgzs/playlist.m3u8",
-"CNR中国交通广播,https://satellitepull.cnr.cn/live/wxzgjtgb/playlist.m3u8",
-"CNR乡村之声,https://satellitepull.cnr.cn/live/wxxczs/playlist.m3u8",
-"CNR哈语广播,https://satellitepull.cnr.cn/live/wxhygb/playlist.m3u8",
-"Hit FM,https://sk.cri.cn/887.m3u8",
-"环球资讯,https://sk.cri.cn/905.m3u8",
-"南海之声,https://sk.cri.cn/nhzs.m3u8",
-"轻松调频,https://sk.cri.cn/915.m3u8",
-"CGTN,https://sk.cri.cn/am846.m3u8",
+"北京音乐广播,http://iovliveplay.radio.cn/fm/1600000000481h.m3u8",
+"深圳电台飞扬971,http://iovliveplay.radio.cn/fm/1600000002407h.m3u8",
+"楚天音乐广播,http://iovliveplay.radio.cn/fm/1600000002378h.m3u8",
+"湖北经典音乐广播,http://iovliveplay.radio.cn/fm/1600000000304h.m3u8",
+"安徽音乐广播,http://iovliveplay.radio.cn/fm/1600000000300h.m3u8",
+"南京音乐广播,http://lhttp.qingting.fm/live/4963/64k.mp3",
+"浙江音乐调频,http://lhttp.qingting.fm/live/4866/64k.mp3",
+"上海动感101,http://lhttp.qingting.fm/live/274/64k.mp3",
+"上海流行音乐LoveRadio,http://lhttp.qingting.fm/live/273/64k.mp3",
+"广东音乐之声,http://lhttp.qingting.fm/live/1260/64k.mp3",
+"江苏音乐广播,http://iovliveplay.radio.cn/fm/1600000000172h.m3u8",
+"河北音乐广播,http://iovliveplay.radio.cn/fm/1600000000360h.m3u8",
+"重庆音乐广播,http://iovliveplay.radio.cn/fm/1600000000407h.m3u8",
+"厦门音乐广播,http://iovliveplay.radio.cn/fm/1600000003153h.m3u8",
+"怀集音乐之声,http://iovliveplay.radio.cn/fm/1600000002241h.m3u8",
+"爵士FM,http://iovliveplay.radio.cn/fm/1600000002465h.m3u8",
+"Jia 883 Radio,http://playerservices.streamtheworld.com/api/livestream-redirect/883JIAAAC.aac",
+"RIA 897,https://22393.live.streamtheworld.com/RIA897FM_SC",
+"YES 933,https://22393.live.streamtheworld.com/YES933_PREM.aac",
+"CNA 938,https://22893.live.streamtheworld.com/938NOW_SC",
+"飞扬调频,http://stream.rcs.revma.com/e0tdah74hv8uv",
+"飞碟电台,http://stream.rcs.revma.com/em90w4aeewzuv",
+"中广新闻网,http://stream.rcs.revma.com/fgtx07f3qtzuv",
+"中广音乐网,http://stream.rcs.revma.com/ks4vsmg3qtzuv",
+"中广流行网,http://stream.rcs.revma.com/aw9uqyxy2tzuv",
+"中广 I go,https://stream.rcs.revma.com/s7hc9kpy2tzuv",
+"IC之音,https://n10.rcs.revma.com/7mnq8rt7k5zuv",
+"台北HitFM,http://202.39.43.67:1935/live/RA000036/playlist.m3u8",
+"BravoFM91.3,https://onair.bravo913.com.tw:9130/live.mp3",
+"澳门绿村电台,https://fm995.ddns.net/hls1/fm995.m3u8",
+"AsiaFM 亚洲音乐台,http://asiafm.hk:8000/asiafm",
+"AsiaFM HD音乐台,http://asiafm.hk:8000/asiahd",
+"AsiaFM 亚洲音乐,http://asiafm.vip:8000/fm965"
         ].join('\\');
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -706,6 +746,10 @@
             const m3uCancelBtn = document.getElementById('m3u-cancel');
             const m3uConfirmBtn = document.getElementById('m3u-confirm');
             const defaultLoadCheckbox = document.getElementById('default-load-checkbox');
+			const urlCancelBtn = document.getElementById("url-cancel");
+			const urlConfirmBtn = document.getElementById("url-confirm");
+			const m3uNameInput = document.getElementById("m3u-name-input");
+			const m3uUrlInput = document.getElementById("m3u-url-input");
 
             // 初始音量
             audioPlayer.volume = 0.8;
@@ -720,7 +764,6 @@
 
             // 从本地存储获取收藏和播放次数数据
             let favorites = JSON.parse(localStorage.getItem('radioFavorites')) || [];
-            let playCounts = JSON.parse(localStorage.getItem('radioPlayCounts')) || {};
             let defaultM3uFile = JSON.parse(localStorage.getItem('defaultM3uFile'));
 
             // 当前显示模式: all, favorites
@@ -748,7 +791,7 @@
 
                 // 根据显示模式过滤
                 if (displayMode === 'favorites') {
-                    filteredStations = stations.filter(station => favorites.includes(station.id));
+                    filteredStations = [...favorites];
                 }
 
                 // 应用搜索过滤
@@ -756,13 +799,20 @@
                     const lowerFilter = filter.toLowerCase();
                     filteredStations = filteredStations.filter(station =>
                         station.name.toLowerCase().includes(lowerFilter));
+						// station.name.toLowerCase().includes(lowerFilter) || station.url.toLowerCase().includes(lowerFilter));
                 }
 
                 filteredStations.forEach((station, index) => {
                     if (!station) return;
-                    const originalIndex = stations.findIndex(s => s.id === station.id);
-                    const isActive = originalIndex === currentStationIndex;
-                    const isFavorite = favorites.includes(station.id);
+                    // 检查是否在主列表中
+                    const isInMainList = stations.some(s => s.id === station.id);
+                    // 获取在主列表中的索引（如果存在）
+                    const originalIndex = isInMainList ? stations.findIndex(s => s.id === station.id) : -1;
+                    // 检查是否为当前播放的电台
+                    const isActive = isInMainList ? (originalIndex === currentStationIndex) : 
+                                   (currentStationIndex !== -1 && stations[currentStationIndex].id === station.id);
+                    // 检查是否为收藏电台
+                    const isFavorite = favorites.some(fav => fav.id === station.id);
 
                     const stationItem = document.createElement('div');
                     stationItem.className = 'station-item';
@@ -785,7 +835,14 @@
                     
 
                     stationItem.addEventListener('click', () => {
-                        selectStation(originalIndex);
+                        // 如果在主列表中，使用主列表索引
+                        if (isInMainList) {
+                            selectStation(originalIndex);
+                        } else {
+                            // 否则从收藏列表添加到主列表并播放
+                            const newIndex = stations.push(station) - 1;
+                            selectStation(newIndex);
+                        }
                     });
 
                     stationList.appendChild(stationItem);
@@ -796,27 +853,32 @@
                     btn.addEventListener('click', function (e) {
                         e.stopPropagation();
                         const stationId = this.getAttribute('data-id');
-                        toggleFavorite(stationId);
+						// 找到对应的电台
+                        const station = filteredStations.find(s => s.id === stationId);
+                        if (station) {
+                            toggleFavorite(station);
+                        }
                     });
                 });
             }
 
             // 切换收藏状态
-            function toggleFavorite(stationId) {
-                const index = favorites.indexOf(stationId);
+            function toggleFavorite(station) {
+				// 查找收藏列表中是否存在该电台
+                const index = favorites.findIndex(fav => fav.id === station.id);
+				
                 if (index === -1) {
-                    favorites.push(stationId);
+					// 添加收藏
+                    favorites.push({...station}); // 存储完整对象
                 } else {
+					// 从收藏中移除
                     favorites.splice(index, 1);
                 }
+				
+				//保存到本地存储
                 localStorage.setItem('radioFavorites', JSON.stringify(favorites));
+				//重新渲染列表
                 renderStationList(searchBox.value);
-            }
-
-            // 增加播放次数
-            function incrementPlayCount(stationId) {
-                playCounts[stationId] = (playCounts[stationId] || 0) + 1;
-                localStorage.setItem('radioPlayCounts', JSON.stringify(playCounts));
             }
 
             // 选择电台
@@ -824,9 +886,6 @@
                 if (index < 0 || index >= stations.length) return;
                 currentStationIndex = index;
                 const station = stations[index];
-
-                // 更新播放次数
-                incrementPlayCount(station.id);
 
                 // 更新显示
                 currentStationDisplay.textContent = station.name;
@@ -1053,6 +1112,59 @@
             m3uCancelBtn.addEventListener('click', function () {
                 m3uSelectContainer.style.display = 'none';
             });
+            // 取消添加URL
+			urlCancelBtn.addEventListener('click', function () {
+                m3uSelectContainer.style.display = 'none';
+				m3uNameInput.value='';
+				m3uUrlInput.value='';
+            });
+			// 添加URL
+			urlConfirmBtn.addEventListener('click', function () {
+                rname = m3uNameInput.value;
+				rurl = m3uUrlInput.value;
+				if(rurl == ""){
+					alert("电台链接不能为空");
+				}
+				else{
+					if(rname == ""){
+						rname = rurl;
+					}
+					const rstation={
+                            name: rname.trim(),
+                            url: rurl.trim(),
+                            id: rname.trim().toLowerCase().replace(/\s+/g, '-')
+					}
+					stations.push(rstation);
+					
+                    const originalIndex = stations.findIndex(s => s.id === rstation.id);
+                    const isActive = originalIndex === currentStationIndex;
+
+                    const stationItem = document.createElement('div');
+                    stationItem.className = 'station-item';
+                    stationItem.classList.add('active');
+					
+					if(showurl){
+						stationItem.innerHTML = `<div class="station-item-name">${rname}<div style="font-size:9pt;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">${rurl}</div></div>
+                        <button class="favorite-btn" data-id="${rstation.id}">☆</button>`;
+					}
+					else{
+						stationItem.innerHTML = `<div class="station-item-name">${rname}</div>
+                        <button class="favorite-btn" data-id="${rstation.id}">☆</button>`;
+					}
+                    
+
+                    stationItem.addEventListener('click', () => {
+                        selectStation(originalIndex);
+                    });
+
+                    stationList.appendChild(stationItem);
+					selectStation(originalIndex);
+					currentStationDisplay.click();
+				}
+				m3uSelectContainer.style.display = 'none';
+				m3uNameInput.value='';
+				m3uUrlInput.value='';
+            });
 
             // 确认选择M3u文件
             m3uConfirmBtn.addEventListener('click', function () {
@@ -1164,6 +1276,15 @@
 
             // 键盘快捷键
             document.addEventListener('keydown', function (e) {
+			    // 检查当前焦点是否在输入框中
+			    const activeElement = document.activeElement;
+			    const isInputFocused = activeElement.tagName === 'INPUT' && 
+			                          activeElement.type !== 'checkbox' && 
+			                          activeElement.type !== 'radio';
+    
+			    // 如果焦点在输入框中，不执行快捷键
+			    if (isInputFocused) return;
+				
                 if (e.code === 'Space') {
                     e.preventDefault();
                     btnPlay.click();
